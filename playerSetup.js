@@ -1,6 +1,5 @@
 const setupMenu = document.getElementById("setup-menu");
 const setupForm = document.getElementById("setup-form");
-const setupStatus = document.getElementById("setup-status");
 const userIdInputs = [
   document.getElementById("user-1-id"),
   document.getElementById("user-2-id"),
@@ -37,7 +36,5 @@ setupForm.addEventListener("submit", (event) => {
   });
   if (!setupForm.reportValidity()) return;
 
-  const selectedMode = setupForm.querySelector('input[name="aiMode"]:checked');
-  setupStatus.textContent = `Player setup confirmed: ${selectedMode.parentElement.textContent.trim()}.`;
-  setupMenu.close();
+  window.location.assign("Game.html");
 });

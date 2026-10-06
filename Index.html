@@ -14,7 +14,6 @@
         <button id="start-button" class="start-button" type="button">
           Start
         </button>
-        <p id="setup-status" class="setup-status" role="status"></p>
       </header>
     </main>
     <dialog id="setup-menu" aria-labelledby="setup-heading">
@@ -27,14 +26,28 @@
             <label for="user-1-id">User ID</label>
             <input id="user-1-id" name="user1Id" type="text" required />
             <label for="user-1-age">Age</label>
-            <input id="user-1-age" name="user1Age" type="number" min="1" step="1" required />
+            <input
+              id="user-1-age"
+              name="user1Age"
+              type="number"
+              min="1"
+              step="1"
+              required
+            />
           </fieldset>
           <fieldset>
             <legend>User 2</legend>
             <label for="user-2-id">User ID</label>
             <input id="user-2-id" name="user2Id" type="text" required />
             <label for="user-2-age">Age</label>
-            <input id="user-2-age" name="user2Age" type="number" min="1" step="1" required />
+            <input
+              id="user-2-age"
+              name="user2Age"
+              type="number"
+              min="1"
+              step="1"
+              required
+            />
           </fieldset>
         </div>
         <fieldset class="ai-options">
@@ -53,7 +66,9 @@
           </label>
         </fieldset>
         <div class="setup-actions">
-          <button id="cancel-setup" class="secondary-button" type="button">Cancel</button>
+          <button id="cancel-setup" class="secondary-button" type="button">
+            Cancel
+          </button>
           <button type="submit">Confirm setup</button>
         </div>
       </form>
