@@ -53,6 +53,36 @@ body::before {
 	padding: clamp(24px, 5vw, 72px);
 }
 
+.about-page {
+	flex-direction: column;
+	gap: 40px;
+}
+
+.about-page .site-header {
+	width: 100%;
+}
+
+.about-page .site-header h1 {
+	font-size: clamp(2.5rem, 7vw, 5rem);
+}
+
+.site-nav {
+	display: flex;
+	justify-content: center;
+	gap: 24px;
+	margin-bottom: 28px;
+}
+
+.about-content {
+	display: grid;
+	gap: 20px;
+	width: min(100%, 900px);
+}
+
+.about-content h2 {
+	margin-bottom: 12px;
+}
+
 .site-header {
 	max-width: 900px;
 	text-align: center;
