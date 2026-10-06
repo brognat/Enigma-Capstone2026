@@ -64,7 +64,7 @@ const ClickLogger = (() => {
       data = JSON.stringify(clicks, null, 2);
       type = "application/json";
     }
-    // Little trick: make a fake link and "click" it to trigger the download
+    // make a fake link and "click" it to trigger the download
     const url = URL.createObjectURL(new Blob([data], { type }));
     const a = document.createElement("a");
     a.href = url;

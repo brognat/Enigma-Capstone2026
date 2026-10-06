@@ -36,5 +36,7 @@ setupForm.addEventListener("submit", (event) => {
   });
   if (!setupForm.reportValidity()) return;
 
+  const aiMode = setupForm.elements.namedItem("aiMode").value;
+  sessionStorage.setItem("aiMode", aiMode);
   window.location.assign("Game.html");
 });
