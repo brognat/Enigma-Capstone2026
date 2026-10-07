@@ -78,6 +78,10 @@ const ClickLogger = (() => {
   document.addEventListener("click", record, true);
   document.addEventListener("auxclick", record, true);
 
+  document.querySelectorAll("[data-export-clicks]").forEach((button) => {
+    button.addEventListener("click", () => download());
+  });
+
   // These are the only things you can call from outside, e.g. ClickLogger.download()
   return { getClicks, clear, download };
 })();
