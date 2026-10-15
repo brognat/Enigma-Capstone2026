@@ -11,18 +11,20 @@
       <header class="site-header">
         <h1>Enigma Escape Rooms</h1>
         <p>A collaborative problem solving experience</p>
-        <button id="start-button" class="start-button" type="button">
-          Start
-        </button>
+        <div class="home-actions">
+          <button id="start-button" class="start-button" type="button">
+            Start
+          </button>
+          <button
+            class="home-export secondary-button"
+            type="button"
+            data-export-clicks
+          >
+            Export data
+          </button>
+        </div>
       </header>
     </main>
-    <button
-      class="home-export secondary-button"
-      type="button"
-      data-export-clicks
-    >
-      Export data
-    </button>
     <dialog id="setup-menu" aria-labelledby="setup-heading">
       <form id="setup-form">
         <h2 id="setup-heading">Player setup</h2>
@@ -64,6 +66,5 @@
     </dialog>
     <script src="playerSetup.js"></script>
     <script src="clickLogger.js"></script>
-    <script src="DataExport.js"></script>
   </body>
 </html>
