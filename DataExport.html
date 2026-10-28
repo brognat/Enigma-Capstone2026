@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Saved Transcripts - The Enigma Escape Room</title>
+    <link rel="stylesheet" href="Style.css" />
+  </head>
+  <body>
+    <main id="game-root">
+      <section class="panel export-page" aria-labelledby="export-heading">
+        <a href="Index.html">Return home</a>
+        <h1 id="export-heading">Saved transcripts</h1>
+        <p>Choose a past saved transcript to export.</p>
+        <p id="export-note">
+          Demo only: the transcripts below are samples. Saving and downloading
+          will be added later.
+        </p>
+        <div class="export-options">
+          <label for="transcript-select">Transcript</label>
+          <select id="transcript-select" aria-describedby="export-note">
+            <option value="" selected disabled>Select a transcript</option>
+            <option value="sample-1">
+              Sample room 1 - Full AI - October 15, 2026
+            </option>
+            <option value="sample-2">
+              Sample room 2 - Collaborative AI - October 14, 2026
+            </option>
+            <option value="sample-3">
+              Sample room 3 - No AI - October 13, 2026
+            </option>
+          </select>
+          <label for="export-format">Download format</label>
+          <select id="export-format">
+            <option value="txt">Text (.txt)</option>
+            <option value="csv">Spreadsheet (.csv)</option>
+            <option value="json">JSON (.json)</option>
+          </select>
+          <button type="button" disabled aria-describedby="export-note">
+            Download transcript
+          </button>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

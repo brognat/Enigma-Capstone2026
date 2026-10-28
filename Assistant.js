@@ -25,7 +25,7 @@ function setChatOpen(companion, isOpen) {
   openCompanion = isOpen ? companion : null;
 
   if (isOpen) {
-    companion.panel.focus();
+    companion.panel.querySelector(".robot-chat-input").focus();
   } else {
     companion.toggle.focus();
   }

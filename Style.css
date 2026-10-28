@@ -119,6 +119,8 @@ body::before {
 	bottom: clamp(112px, 15vh, 150px);
 	z-index: 2;
 	width: min(340px, calc(100vw - 32px));
+	max-height: calc(100dvh - clamp(112px, 15vh, 150px) - 16px);
+	overflow-y: auto;
 	border: 1px solid rgba(240, 179, 94, 0.42);
 	border-radius: 10px;
 	padding: 16px;
@@ -158,6 +160,51 @@ body::before {
 	padding: 12px;
 	color: var(--color-text);
 	background: var(--color-surface-strong);
+}
+
+.robot-chat-label {
+	display: block;
+	margin: 16px 0 8px;
+	color: var(--color-muted);
+	font-size: 0.8rem;
+}
+
+.robot-chat-composer {
+	display: flex;
+	align-items: flex-end;
+	gap: 8px;
+}
+
+.robot-chat-input {
+	flex: 1;
+	min-width: 0;
+	border: 1px solid var(--color-muted);
+	border-radius: 6px;
+	padding: 10px 12px;
+	color: var(--color-text);
+	background: var(--color-background);
+	font: inherit;
+	line-height: 1.5;
+	resize: vertical;
+}
+
+.robot-chat-input::placeholder {
+	color: var(--color-muted);
+}
+
+.robot-chat-input:focus-visible {
+	outline: 2px solid var(--color-accent-strong);
+	outline-offset: 2px;
+}
+
+.robot-chat-composer button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.robot-chat-note {
+	margin: 10px 0 0;
+	font-size: 0.75rem;
 }
 
 .robot-face .head {
@@ -521,6 +568,50 @@ input:focus-visible {
 
 .home-export {
 	min-width: 160px;
+}
+
+.home-actions .button,
+.completion-actions .button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	text-decoration: none;
+}
+
+.export-page {
+	width: min(100%, 760px);
+}
+
+.export-page h1 {
+	margin-top: 24px;
+	font-size: clamp(2rem, 6vw, 3rem);
+}
+
+.export-options {
+	display: grid;
+	gap: 12px;
+	margin: 24px 0;
+}
+
+.export-page select {
+	width: 100%;
+	min-height: 44px;
+	border: 1px solid var(--color-muted);
+	border-radius: 4px;
+	padding: 8px;
+	color: var(--color-text);
+	background: var(--color-background);
+	font: inherit;
+}
+
+.export-page select:focus-visible {
+	outline: 3px solid var(--color-accent-strong);
+	outline-offset: 3px;
+}
+
+.export-page button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
 }
 
 #game-root.room-complete {

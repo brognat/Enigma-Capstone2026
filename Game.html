@@ -95,6 +95,20 @@
       <p class="robot-chat-message" id="robot-chat-message">
         Hi! I'm your A.I. game assistant, here to help you escape!
       </p>
+      <label class="robot-chat-label" for="robot-chat-input">Your message</label>
+      <div class="robot-chat-composer">
+        <textarea
+          id="robot-chat-input"
+          class="robot-chat-input"
+          rows="2"
+          placeholder="Type a message..."
+          aria-describedby="robot-chat-note"
+        ></textarea>
+        <button type="button" disabled>Send</button>
+      </div>
+      <p class="robot-chat-note" id="robot-chat-note">
+        Preview only. Messages are not sent.
+      </p>
     </section>
     <section
       class="robot-chat"
@@ -115,8 +129,23 @@
       <p class="robot-chat-message" id="collaborative-robot-chat-message">
         Hi! I'm your A.I. collaborator, here to help you and your team escape!
       </p>
+      <label class="robot-chat-label" for="collaborative-robot-chat-input">
+        Your message
+      </label>
+      <div class="robot-chat-composer">
+        <textarea
+          id="collaborative-robot-chat-input"
+          class="robot-chat-input"
+          rows="2"
+          placeholder="Type a message..."
+          aria-describedby="collaborative-robot-chat-note"
+        ></textarea>
+        <button type="button" disabled>Send</button>
+      </div>
+      <p class="robot-chat-note" id="collaborative-robot-chat-note">
+        Preview only. Messages are not sent.
+      </p>
     </section>
-    <script src="clickLogger.js"></script>
     <script src="Assistant.js"></script>
   </body>
 </html>
