@@ -5,12 +5,113 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Game - The Enigma Escape Room</title>
     <link rel="stylesheet" href="Style.css" />
+    <link rel="stylesheet" href="Game.css" />
   </head>
-  <body>
-    <main id="game-root" aria-label="Game placeholder">
-      <h1>Game Goes Here</h1>
+  <body class="game-page">
+    <main id="game-root" aria-label="Room One">
+      <header class="room-toolbar">
+        <h1>The Glass Wall</h1>
+        <nav aria-label="Game controls">
+          <a href="Index.html">Exit</a>
+          <a class="finish-room button" href="Complete.html">Finish room</a>
+        </nav>
+      </header>
+      <svg
+        id="room-scene"
+        viewBox="0 0 1280 650"
+        role="img"
+        aria-label="Stone room with two avatars and a glass wall across the hallway opening"
+        aria-describedby="room-controls"
+        tabindex="0"
+      >
+        <defs>
+          <pattern id="wall-stone" patternUnits="userSpaceOnUse" width="168" height="100">
+            <image href="Stonewall.png" width="168" height="100" preserveAspectRatio="none" />
+          </pattern>
+          <pattern
+            id="floor-stone"
+            href="#wall-stone"
+            patternTransform="matrix(1 0 -0.45 0.45 181 469)"
+          />
+          <clipPath id="hallway-opening">
+            <rect x="601" y="269" width="160" height="200" />
+          </clipPath>
+          <linearGradient id="hallway-shade" gradientUnits="userSpaceOnUse" x1="0" y1="469" x2="0" y2="379">
+            <stop offset="0" stop-color="#000" stop-opacity="0.15" />
+            <stop offset="1" stop-color="#000" stop-opacity="0.6" />
+          </linearGradient>
+          <radialGradient id="player-shadow">
+            <stop offset="0" stop-color="#000" stop-opacity="0.55" />
+            <stop offset="1" stop-color="#000" stop-opacity="0" />
+          </radialGradient>
+          <linearGradient id="glass-tint" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#d9f7ff" stop-opacity="0.23" />
+            <stop offset="0.48" stop-color="#91d9e8" stop-opacity="0.12" />
+            <stop offset="1" stop-color="#e8fbff" stop-opacity="0.2" />
+          </linearGradient>
+        </defs>
+        <g stroke="#191919" stroke-width="3" stroke-linejoin="round">
+          <path d="M46 185 L181 130 H1181 V469 L1046 604 H46 Z" fill="url(#wall-stone)" />
+          <path d="M46 185 L181 130 V469 L46 604 Z" fill="#484848" />
+          <path d="M46 604 L181 469 H1181 L1046 604 Z" fill="url(#floor-stone)" />
+          <path d="M46 604 H1046 V623 H46 Z" fill="#3c3c3c" />
+          <path d="M1046 604 L1181 469 V488 L1046 623 Z" fill="#303030" />
+        </g>
+        <g id="hallway" clip-path="url(#hallway-opening)" stroke="#191919" stroke-width="3" stroke-linejoin="round">
+          <rect x="601" y="269" width="160" height="200" fill="#111" stroke="none" />
+          <path d="M691 179 H851 V379 H691 Z" fill="url(#wall-stone)" />
+          <path d="M691 179 H851 V379 H691 Z" fill="#000" fill-opacity="0.6" stroke="none" />
+          <path d="M601 469 L691 379 L691 179 L601 269 Z" fill="#2e2e2e" />
+          <path d="M601 469 H761 L851 379 H691 Z" fill="url(#floor-stone)" />
+          <path d="M601 469 H761 L851 379 H691 Z" fill="url(#hallway-shade)" stroke="none" />
+        </g>
+        <path d="M601 469 V269 H761 V469" fill="none" stroke="#191919" stroke-width="4" />
+        <g id="room-player-clip">
+          <g id="room-player" transform="translate(613.5 536.5)">
+            <ellipse class="room-player-shadow" cx="0" cy="-1" rx="17" ry="6" fill="url(#player-shadow)" />
+            <circle cx="0" cy="-10" r="10" fill="#65c8ed" stroke="#d8f6ff" stroke-width="2" />
+          </g>
+        </g>
+        <g id="room-player-two-clip">
+          <g id="room-player-two" transform="translate(671.5 536.5)">
+            <ellipse class="room-player-shadow" cx="0" cy="-1" rx="17" ry="6" fill="url(#player-shadow)" />
+            <circle cx="0" cy="-10" r="10" fill="#f3a64a" stroke="#fff0d6" stroke-width="2" />
+          </g>
+        </g>
+        <g id="hallway-glass" aria-hidden="true">
+          <rect x="603" y="271" width="156" height="196" fill="url(#glass-tint)" stroke="#26353a" stroke-width="5" />
+          <rect x="606" y="274" width="150" height="190" fill="none" stroke="#a9dce5" stroke-opacity="0.8" stroke-width="1.5" />
+          <path d="M611 279 L647 279 L611 323 Z M751 415 L751 456 L718 456 Z" fill="#eaffff" fill-opacity="0.2" />
+          <path d="M628 281 L628 458 M632 281 L632 458" fill="none" stroke="#e4fbff" stroke-opacity="0.48" stroke-width="1.5" />
+          <path d="M611 333 L751 333 M611 337 L751 337" fill="none" stroke="#e4fbff" stroke-opacity="0.22" stroke-width="1" />
+          <path d="M603 271 H759 M603 467 H759" fill="none" stroke="#a7bac0" stroke-width="2" />
+        </g>
+      </svg>
+      <footer class="room-footer" aria-label="Avatar controls">
+        <section class="room-control-set" aria-labelledby="player-one-controls">
+          <p id="room-controls">
+            <strong id="player-one-controls">Player 1</strong>
+            <kbd>A</kbd> / <kbd>D</kbd> left / right
+            <span aria-hidden="true">&middot;</span>
+            <kbd>W</kbd> / <kbd>S</kbd> back / front
+          </p>
+          <div class="room-direction-pad" role="group" aria-label="Player 1 touch controls">
+            <button type="button" data-direction="w" aria-label="Move Player 1 toward back wall">W</button>
+            <button type="button" data-direction="a" aria-label="Move Player 1 left">A</button>
+            <button type="button" data-direction="s" aria-label="Move Player 1 toward front edge">S</button>
+            <button type="button" data-direction="d" aria-label="Move Player 1 right">D</button>
+          </div>
+        </section>
+        <section class="room-control-set room-control-set--second" aria-labelledby="player-two-controls">
+          <p id="player-two-controls"><strong>Player 2</strong> Arrow keys</p>
+          <div class="arrow-key-pad" aria-hidden="true">
+            <kbd>↑</kbd>
+            <kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd>
+          </div>
+        </section>
+      </footer>
+      <noscript><p>Enable JavaScript to move around</p></noscript>
     </main>
-    <a class="finish-room button" href="Complete.html">Finish room</a>
     <button
       class="robot-face robot-face--full"
       id="robot-chat-toggle"
@@ -147,5 +248,6 @@
       </p>
     </section>
     <script src="Assistant.js"></script>
+    <script src="Game.js"></script>
   </body>
 </html>

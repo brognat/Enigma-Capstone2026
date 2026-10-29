@@ -1,4 +1,7 @@
-const selectedAiMode = sessionStorage.getItem("aiMode");
+const savedAiMode = sessionStorage.getItem("aiMode");
+const selectedAiMode = ["full", "collaborative", "none"].includes(savedAiMode)
+  ? savedAiMode
+  : "full";
 const greetings = {
   full: "Hi! I'm your A.I. game assistant, here to help you escape!",
   collaborative:
@@ -50,6 +53,8 @@ companions.forEach((companion) => {
     .addEventListener("click", () => {
       setChatOpen(companion, false);
     });
+
+  setChatOpen(companion, true);
 });
 
 document.addEventListener("keydown", (event) => {
