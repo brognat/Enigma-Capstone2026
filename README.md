@@ -20,3 +20,12 @@ This is a setup interface, not account authentication or a playable game.
 Player details and the AI selection are not saved or passed to the placeholder
 page. They are not sent to a server. The existing click logger is unchanged and
 is also included on the game page.
+
+### Stone hallway prototype
+
+Open `Game2.html` to play the separate 3D stone hallway prototype. Move the red
+player with WASD and the blue player with the arrow keys. Approach the left metal
+terminal and press **Q** as red, or approach the right terminal and press **M**
+as blue. Each terminal has a black square screen and blocks movement. Interaction
+only displays a confirmation message for now; it does not open a puzzle or
+complete the room. Movement and interaction keys are ignored while typing in chat.
