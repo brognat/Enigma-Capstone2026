@@ -10,3 +10,8 @@ This is Enigma Escape Rooms, a collaborative problem solving .
 - [Project Proposal](https://drive.google.com/file/d/1Sc7_f9G91HDs61mL34WOrw8-cj4ng9cL/view?usp=sharing)
 - [Team Charter](https://docs.google.com/document/d/1F6Tn9FQu4P8WYkxtc_jBd3NQGcFn8eIklOzBdr9m440/edit?usp=sharing)
 - [Requiremtns](https://docs.google.com/document/d/1CeLWWToCdkAvKGjyRuVgA_jvnAEEmvq6quB3GkGn3q0/edit?usp=sharing)
+
+## Sources
+- Physics Engine - [Rapier](https://rapier.rs/) by [dimforge](https://github.com/dimforge)
+- [PhyscisEngine.js](src/game/core/PhysicsEngine.js) - Adapted from [Rapier Basic](https://github.com/mrdoob/three.js/blob/master/examples/physics_rapier_basic.html)
+- [PlayerController.js](src/game/core/PlayerController.js) and [Player.js](src/game/core/Player.js) - Adapted from [Rapier Character Controller](https://github.com/mrdoob/three.js/blob/master/examples/physics_rapier_character_controller.html)

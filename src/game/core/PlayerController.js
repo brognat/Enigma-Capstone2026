@@ -1,3 +1,5 @@
+// Adapted from https://github.com/mrdoob/three.js/blob/master/examples/physics_rapier_character_controller.html
+
 class PlayerController {
 
     constructor(physics, player, offset = 0.01) {
