@@ -27,7 +27,7 @@
     <dialog id="setup-menu" aria-labelledby="setup-heading">
       <form id="setup-form">
         <h2 id="setup-heading">Player setup</h2>
-        <p>Enter both players' details and choose an AI mode.</p>
+        <p>Enter both players' details, choose an AI mode and pick a room.</p>
         <div class="player-fields">
           <fieldset>
             <legend>User 1</legend>
@@ -53,6 +53,17 @@
           <label>
             <input type="radio" name="aiMode" value="none" />
             No A.I. implementation
+          </label>
+        </fieldset>
+        <fieldset class="ai-options">
+          <legend>Room</legend>
+          <label>
+            <input type="radio" name="room" value="Game.html" required checked />
+            Game 1: The Glass Wall
+          </label>
+          <label>
+            <input type="radio" name="room" value="Game2.html" />
+            Game 2: Stone Hallway (3D)
           </label>
         </fieldset>
         <div class="setup-actions">

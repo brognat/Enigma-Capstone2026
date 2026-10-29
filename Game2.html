@@ -1,0 +1,316 @@
+﻿<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Game 2 - The Enigma Escape Room</title>
+    <link rel="stylesheet" href="Style.css" />
+    <link rel="stylesheet" href="Game.css" />
+    <style>
+      #game-root canvas { position: absolute; inset: 0; display: block; outline: none; }
+      #hud {
+        position: absolute; z-index: 2; bottom: 16px; left: 50%; transform: translateX(-50%); margin: 0;
+        color: var(--color-text); font-size: 0.85rem; background: rgba(0, 0, 0, 0.5);
+        padding: 6px 10px; border-radius: 4px; pointer-events: none;
+      }
+    </style>
+    <script type="importmap">
+      { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+    </script>
+  </head>
+  <body class="game-page">
+    <main id="game-root" aria-label="Room Two">
+      <header class="room-toolbar">
+        <h1>Stone Hallway</h1>
+        <nav aria-label="Game controls">
+          <a href="Index.html">Exit</a>
+          <a class="finish-room button" href="Complete.html">Finish room</a>
+        </nav>
+      </header>
+      <p id="hud">Red: W A S D &nbsp;|&nbsp; Blue: Arrow keys</p>
+    </main>
+    <button
+      class="robot-face robot-face--full"
+      id="robot-chat-toggle"
+      type="button"
+      aria-label="Open game guide chat"
+      aria-controls="robot-chat"
+      aria-expanded="false"
+      data-ai-mode="full"
+      hidden
+    >
+      <span class="antenna left"></span>
+      <span class="antenna right"></span>
+      <span class="top-piece"></span>
+
+      <span class="ear left"></span>
+      <span class="ear right"></span>
+
+      <span class="head"></span>
+
+      <span class="eye left"><span class="pupil"></span></span>
+      <span class="eye right"><span class="pupil"></span></span>
+
+      <span class="mouth">
+        <span class="tooth"></span>
+        <span class="tooth"></span>
+        <span class="tooth"></span>
+        <span class="tooth"></span>
+        <span class="tooth"></span>
+      </span>
+    </button>
+    <button
+      class="robot-face robot-face--collaborative"
+      id="collaborative-robot-chat-toggle"
+      type="button"
+      aria-label="Open collaborative game guide chat"
+      aria-controls="collaborative-robot-chat"
+      aria-expanded="false"
+      data-ai-mode="collaborative"
+      hidden
+    >
+      <span class="antenna left"></span>
+      <span class="antenna right"></span>
+      <span class="top-piece"></span>
+
+      <span class="ear left"></span>
+      <span class="ear right"></span>
+
+      <span class="head"></span>
+
+      <span class="eye left"><span class="pupil"></span></span>
+      <span class="eye right"><span class="pupil"></span></span>
+
+      <span class="mouth">
+        <span class="tooth"></span>
+        <span class="tooth"></span>
+        <span class="tooth"></span>
+        <span class="tooth"></span>
+        <span class="tooth"></span>
+      </span>
+    </button>
+    <section
+      class="robot-chat"
+      id="robot-chat"
+      data-ai-mode="full"
+      role="dialog"
+      aria-labelledby="robot-chat-title"
+      aria-describedby="robot-chat-message"
+      tabindex="-1"
+      hidden
+    >
+      <header class="robot-chat-header">
+        <h2 id="robot-chat-title">Game Guide</h2>
+        <button
+          class="robot-chat-close"
+          id="robot-chat-close"
+          type="button"
+          aria-label="Close chat"
+        >
+          &times;
+        </button>
+      </header>
+      <p class="robot-chat-message" id="robot-chat-message">
+        Hi! I'm your A.I. game assistant, here to help you escape!
+      </p>
+      <label class="robot-chat-label" for="robot-chat-input">Your message</label>
+      <div class="robot-chat-composer">
+        <textarea
+          id="robot-chat-input"
+          class="robot-chat-input"
+          rows="2"
+          placeholder="Type a message..."
+          aria-describedby="robot-chat-note"
+        ></textarea>
+        <button type="button" disabled>Send</button>
+      </div>
+      <p class="robot-chat-note" id="robot-chat-note">
+        Preview only. Messages are not sent.
+      </p>
+    </section>
+    <section
+      class="robot-chat"
+      id="collaborative-robot-chat"
+      data-ai-mode="collaborative"
+      role="dialog"
+      aria-labelledby="collaborative-robot-chat-title"
+      aria-describedby="collaborative-robot-chat-message"
+      tabindex="-1"
+      hidden
+    >
+      <header class="robot-chat-header">
+        <h2 id="collaborative-robot-chat-title">Collaborative Game Guide</h2>
+        <button class="robot-chat-close" type="button" aria-label="Close chat">
+          &times;
+        </button>
+      </header>
+      <p class="robot-chat-message" id="collaborative-robot-chat-message">
+        Hi! I'm your A.I. collaborator, here to help you and your team escape!
+      </p>
+      <label class="robot-chat-label" for="collaborative-robot-chat-input">
+        Your message
+      </label>
+      <div class="robot-chat-composer">
+        <textarea
+          id="collaborative-robot-chat-input"
+          class="robot-chat-input"
+          rows="2"
+          placeholder="Type a message..."
+          aria-describedby="collaborative-robot-chat-note"
+        ></textarea>
+        <button type="button" disabled>Send</button>
+      </div>
+      <p class="robot-chat-note" id="collaborative-robot-chat-note">
+        Preview only. Messages are not sent.
+      </p>
+    </section>
+    <script src="Assistant.js"></script>
+    <script type="module">
+      import * as THREE from "three";
+
+      const ROOM_W = 20, ROOM_D = 16, WALL_H = 5;
+      const HALL_W = 4, HALL_H = 4, HALL_LEN = 14;
+      const TILE_W = 2.5, TILE_H = 1.5; // world size of one Stonewall.png tile (matches image aspect)
+      const BALL_R = 0.5, SPEED = 6;
+      const BACK_Z = -ROOM_D / 2;
+
+      const root = document.getElementById("game-root");
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setClearColor(0x000000, 0);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setSize(root.clientWidth, root.clientHeight);
+      renderer.shadowMap.enabled = true;
+      root.prepend(renderer.domElement);
+      // Make the scene focusable so clicking it takes focus back from the chat box.
+      renderer.domElement.tabIndex = 0;
+      renderer.domElement.setAttribute("aria-label", "3D stone room with two player spheres");
+      renderer.domElement.addEventListener("pointerdown", () => renderer.domElement.focus());
+
+      const scene = new THREE.Scene();
+
+      // Fixed camera at the front of the room, tilted slightly downward.
+      const camera = new THREE.PerspectiveCamera(55, root.clientWidth / root.clientHeight, 0.1, 200);
+      camera.position.set(0, 11, ROOM_D / 2 + 9);
+      camera.lookAt(0, 0, -2);
+
+      scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+      const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+      sun.position.set(6, 14, 10);
+      sun.castShadow = true;
+      Object.assign(sun.shadow.camera, { left: -15, right: 15, top: 15, bottom: -25 });
+      sun.shadow.mapSize.set(2048, 2048);
+      scene.add(sun);
+      const hallLight = new THREE.PointLight(0xffcc88, 30, 20);
+      hallLight.position.set(0, 3, BACK_Z - HALL_LEN + 2);
+      scene.add(hallLight);
+
+      // Each surface gets its own texture clone (created once the image loads) so the tile repeat matches its size.
+      const stoneSurfaces = [];
+      new THREE.TextureLoader().load("Stonewall.png", (baseTex) => {
+        baseTex.colorSpace = THREE.SRGBColorSpace;
+        for (const { material, width, height } of stoneSurfaces) {
+          const tex = baseTex.clone();
+          tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+          tex.repeat.set(width / TILE_W, height / TILE_H);
+          material.map = tex;
+          material.color.set(0xffffff);
+          material.needsUpdate = true;
+        }
+      });
+
+      function stoneMaterial(width, height) {
+        const material = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.9, side: THREE.DoubleSide });
+        stoneSurfaces.push({ material, width, height });
+        return material;
+      }
+
+      function plane(w, h, pos, rotY = 0, rotX = 0) {
+        const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), stoneMaterial(w, h));
+        mesh.position.copy(pos);
+        mesh.rotation.set(rotX, rotY, 0);
+        mesh.receiveShadow = true;
+        scene.add(mesh);
+      }
+      const v = (x, y, z) => new THREE.Vector3(x, y, z);
+
+      // Room floor and walls (front wall omitted so the camera can see in).
+      plane(ROOM_W, ROOM_D, v(0, 0, 0), 0, -Math.PI / 2);
+      plane(ROOM_D, WALL_H, v(-ROOM_W / 2, WALL_H / 2, 0), Math.PI / 2);
+      plane(ROOM_D, WALL_H, v(ROOM_W / 2, WALL_H / 2, 0), -Math.PI / 2);
+
+      // Back wall split around the hallway opening.
+      const sideW = (ROOM_W - HALL_W) / 2;
+      plane(sideW, WALL_H, v(-(HALL_W / 2 + sideW / 2), WALL_H / 2, BACK_Z));
+      plane(sideW, WALL_H, v(HALL_W / 2 + sideW / 2, WALL_H / 2, BACK_Z));
+      plane(HALL_W, WALL_H - HALL_H, v(0, HALL_H + (WALL_H - HALL_H) / 2, BACK_Z));
+
+      // Hallway: floor, side walls, end wall (no ceiling so players stay visible from the camera).
+      const hallMidZ = BACK_Z - HALL_LEN / 2;
+      plane(HALL_W, HALL_LEN, v(0, 0, hallMidZ), 0, -Math.PI / 2);
+      plane(HALL_LEN, HALL_H, v(-HALL_W / 2, HALL_H / 2, hallMidZ), Math.PI / 2);
+      plane(HALL_LEN, HALL_H, v(HALL_W / 2, HALL_H / 2, hallMidZ), -Math.PI / 2);
+      plane(HALL_W, HALL_H, v(0, HALL_H / 2, BACK_Z - HALL_LEN));
+
+      function makeBall(color, x) {
+        const ball = new THREE.Mesh(
+          new THREE.SphereGeometry(BALL_R, 32, 16),
+          new THREE.MeshStandardMaterial({ color, roughness: 0.3, metalness: 0.2 })
+        );
+        ball.position.set(x, BALL_R, 4);
+        ball.castShadow = true;
+        scene.add(ball);
+        return ball;
+      }
+      const players = [
+        { mesh: makeBall(0xff4444, -2), keys: { up: "KeyW", down: "KeyS", left: "KeyA", right: "KeyD" } },
+        { mesh: makeBall(0x4488ff, 2), keys: { up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight" } },
+      ];
+
+      // Walkable area = room box OR hallway box, inset by the ball radius.
+      function walkable(x, z) {
+        if (z > ROOM_D / 2 - BALL_R) return false;
+        const inRoom = Math.abs(x) <= ROOM_W / 2 - BALL_R && z >= BACK_Z + BALL_R;
+        const inHall = Math.abs(x) <= HALL_W / 2 - BALL_R && z >= BACK_Z - HALL_LEN + BALL_R;
+        return inRoom || inHall;
+      }
+
+      const isTyping = (e) => e.target.closest && e.target.closest("input, textarea, [contenteditable]");
+      const pressed = new Set();
+      window.addEventListener("keydown", (e) => {
+        if (isTyping(e)) return;
+        if (e.code.startsWith("Arrow")) e.preventDefault();
+        pressed.add(e.code);
+      });
+      window.addEventListener("keyup", (e) => pressed.delete(e.code));
+      window.addEventListener("blur", () => pressed.clear());
+      document.addEventListener("focusin", (e) => { if (isTyping(e)) pressed.clear(); });
+
+      const clock = new THREE.Clock();
+      function animate() {
+        const dt = Math.min(clock.getDelta(), 0.05);
+        for (const p of players) {
+          let dx = 0, dz = 0;
+          if (pressed.has(p.keys.up)) dz -= 1;
+          if (pressed.has(p.keys.down)) dz += 1;
+          if (pressed.has(p.keys.left)) dx -= 1;
+          if (pressed.has(p.keys.right)) dx += 1;
+          if (!dx && !dz) continue;
+          const step = (SPEED * dt) / Math.hypot(dx, dz);
+          const pos = p.mesh.position;
+          // Resolve each axis separately so balls slide along walls; rotate to look like rolling.
+          if (walkable(pos.x + dx * step, pos.z)) { pos.x += dx * step; p.mesh.rotation.z -= (dx * step) / BALL_R; }
+          if (walkable(pos.x, pos.z + dz * step)) { pos.z += dz * step; p.mesh.rotation.x += (dz * step) / BALL_R; }
+        }
+        renderer.render(scene, camera);
+        requestAnimationFrame(animate);
+      }
+      animate();
+
+      window.addEventListener("resize", () => {
+        camera.aspect = root.clientWidth / root.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(root.clientWidth, root.clientHeight);
+      });
+    </script>
+  </body>
+</html>
