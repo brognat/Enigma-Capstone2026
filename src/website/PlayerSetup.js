@@ -38,5 +38,5 @@ setupForm.addEventListener("submit", (event) => {
 
   const aiMode = setupForm.elements.namedItem("aiMode").value;
   sessionStorage.setItem("aiMode", aiMode);
-  window.location.assign("Game.html");
+  window.location.assign("../pages/game.html");
 });

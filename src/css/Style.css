@@ -637,3 +637,9 @@ input:focus-visible {
 		grid-template-columns: 1fr;
 	}
 }
+
+#game-canvas{
+	width: 80%;
+	height: 80%;
+	border:2px solid #000000;
+}
