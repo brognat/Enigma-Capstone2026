@@ -7,22 +7,51 @@
     <link rel="stylesheet" href="Style.css" />
     <link rel="stylesheet" href="Game.css" />
     <style>
-      #game-root canvas { position: absolute; inset: 0; display: block; outline: none; }
+      #game-root canvas {
+        position: absolute;
+        inset: 0;
+        display: block;
+        outline: none;
+      }
       #hud {
-        position: absolute; z-index: 2; bottom: 16px; left: 50%; transform: translateX(-50%); margin: 0;
-        color: var(--color-text); font-size: 0.85rem; background: rgba(0, 0, 0, 0.5);
-        padding: 6px 10px; border-radius: 4px; pointer-events: none;
+        position: absolute;
+        z-index: 2;
+        bottom: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        margin: 0;
+        color: var(--color-text);
+        font-size: 0.85rem;
+        background: rgba(0, 0, 0, 0.5);
+        padding: 6px 10px;
+        border-radius: 4px;
+        pointer-events: none;
       }
       #terminal-status {
-        position: absolute; z-index: 2; bottom: 60px; left: 50%; transform: translateX(-50%);
-        width: max-content; max-width: calc(100% - 32px); padding: 6px 10px;
-        color: var(--color-text); font-size: 0.85rem; background: rgba(0, 0, 0, 0.7);
-        border-radius: 4px; pointer-events: none;
+        position: absolute;
+        z-index: 2;
+        bottom: 60px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: max-content;
+        max-width: calc(100% - 32px);
+        padding: 6px 10px;
+        color: var(--color-text);
+        font-size: 0.85rem;
+        background: rgba(0, 0, 0, 0.7);
+        border-radius: 4px;
+        pointer-events: none;
       }
-      #terminal-status p { margin: 4px 0; }
+      #terminal-status p {
+        margin: 4px 0;
+      }
     </style>
     <script type="importmap">
-      { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+        }
+      }
     </script>
   </head>
   <body class="game-page">
@@ -34,10 +63,17 @@
           <a class="finish-room button" href="Complete.html">Finish room</a>
         </nav>
       </header>
-      <p id="hud">Red: W A S D + Q to interact &nbsp;|&nbsp; Blue: Arrow keys + M to interact</p>
+      <p id="hud">
+        Red: W A S D + Q to interact &nbsp;|&nbsp; Blue: Arrow keys + M to
+        interact
+      </p>
       <div id="terminal-status">
-        <p id="red-terminal-status" role="status">Red: approach the left terminal to use Q.</p>
-        <p id="blue-terminal-status" role="status">Blue: approach the right terminal to use M.</p>
+        <p id="red-terminal-status" role="status">
+          Red: approach the left terminal to use Q.
+        </p>
+        <p id="blue-terminal-status" role="status">
+          Blue: approach the right terminal to use M.
+        </p>
       </div>
     </main>
     <button
@@ -124,7 +160,9 @@
       <p class="robot-chat-message" id="robot-chat-message">
         Hi! I'm your A.I. game assistant, here to help you escape!
       </p>
-      <label class="robot-chat-label" for="robot-chat-input">Your message</label>
+      <label class="robot-chat-label" for="robot-chat-input"
+        >Your message</label
+      >
       <div class="robot-chat-composer">
         <textarea
           id="robot-chat-input"
@@ -179,16 +217,27 @@
     <script type="module">
       import * as THREE from "three";
 
-      const ROOM_W = 20, ROOM_D = 16, WALL_H = 5;
-      const HALL_W = 4, HALL_H = 4, HALL_LEN = 14;
-      const TILE_W = 2.5, TILE_H = 1.5; // world size of one Stonewall.png tile (matches image aspect)
-      const BALL_R = 0.5, SPEED = 6;
-      const TERMINAL_W = 1.6, TERMINAL_H = 2.2, TERMINAL_D = 1.2;
+      const ROOM_W = 20,
+        ROOM_D = 16,
+        WALL_H = 5;
+      const HALL_W = 4,
+        HALL_H = 4,
+        HALL_LEN = 14;
+      const TILE_W = 2.5,
+        TILE_H = 1.5; // world size of one Stonewall.png tile (matches image aspect)
+      const BALL_R = 0.5,
+        SPEED = 6;
+      const TERMINAL_W = 1.6,
+        TERMINAL_H = 2.2,
+        TERMINAL_D = 1.2;
       const INTERACT_RANGE = 1.5;
       const BACK_Z = -ROOM_D / 2;
 
       const root = document.getElementById("game-root");
-      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      const renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true,
+      });
       renderer.setClearColor(0x000000, 0);
       renderer.setPixelRatio(window.devicePixelRatio);
       renderer.setSize(root.clientWidth, root.clientHeight);
@@ -196,13 +245,23 @@
       root.prepend(renderer.domElement);
       // Make the scene focusable so clicking it takes focus back from the chat box.
       renderer.domElement.tabIndex = 0;
-      renderer.domElement.setAttribute("aria-label", "3D stone room with two player spheres and two metal terminals");
-      renderer.domElement.addEventListener("pointerdown", () => renderer.domElement.focus());
+      renderer.domElement.setAttribute(
+        "aria-label",
+        "3D stone room with two player spheres and two metal terminals",
+      );
+      renderer.domElement.addEventListener("pointerdown", () =>
+        renderer.domElement.focus(),
+      );
 
       const scene = new THREE.Scene();
 
       // Fixed camera at the front of the room, tilted slightly downward.
-      const camera = new THREE.PerspectiveCamera(55, root.clientWidth / root.clientHeight, 0.1, 200);
+      const camera = new THREE.PerspectiveCamera(
+        55,
+        root.clientWidth / root.clientHeight,
+        0.1,
+        200,
+      );
       camera.position.set(0, 11, ROOM_D / 2 + 9);
       camera.lookAt(0, 0, -2);
 
@@ -210,7 +269,12 @@
       const sun = new THREE.DirectionalLight(0xffffff, 1.2);
       sun.position.set(6, 14, 10);
       sun.castShadow = true;
-      Object.assign(sun.shadow.camera, { left: -15, right: 15, top: 15, bottom: -25 });
+      Object.assign(sun.shadow.camera, {
+        left: -15,
+        right: 15,
+        top: 15,
+        bottom: -25,
+      });
       sun.shadow.mapSize.set(2048, 2048);
       scene.add(sun);
       const hallLight = new THREE.PointLight(0xffcc88, 30, 20);
@@ -232,13 +296,20 @@
       });
 
       function stoneMaterial(width, height) {
-        const material = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.9, side: THREE.DoubleSide });
+        const material = new THREE.MeshStandardMaterial({
+          color: 0x555555,
+          roughness: 0.9,
+          side: THREE.DoubleSide,
+        });
         stoneSurfaces.push({ material, width, height });
         return material;
       }
 
       function plane(w, h, pos, rotY = 0, rotX = 0) {
-        const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), stoneMaterial(w, h));
+        const mesh = new THREE.Mesh(
+          new THREE.PlaneGeometry(w, h),
+          stoneMaterial(w, h),
+        );
         mesh.position.copy(pos);
         mesh.rotation.set(rotX, rotY, 0);
         mesh.receiveShadow = true;
@@ -255,20 +326,38 @@
       const sideW = (ROOM_W - HALL_W) / 2;
       plane(sideW, WALL_H, v(-(HALL_W / 2 + sideW / 2), WALL_H / 2, BACK_Z));
       plane(sideW, WALL_H, v(HALL_W / 2 + sideW / 2, WALL_H / 2, BACK_Z));
-      plane(HALL_W, WALL_H - HALL_H, v(0, HALL_H + (WALL_H - HALL_H) / 2, BACK_Z));
+      plane(
+        HALL_W,
+        WALL_H - HALL_H,
+        v(0, HALL_H + (WALL_H - HALL_H) / 2, BACK_Z),
+      );
 
       // Hallway: floor, side walls, end wall (no ceiling so players stay visible from the camera).
       const hallMidZ = BACK_Z - HALL_LEN / 2;
       plane(HALL_W, HALL_LEN, v(0, 0, hallMidZ), 0, -Math.PI / 2);
-      plane(HALL_LEN, HALL_H, v(-HALL_W / 2, HALL_H / 2, hallMidZ), Math.PI / 2);
-      plane(HALL_LEN, HALL_H, v(HALL_W / 2, HALL_H / 2, hallMidZ), -Math.PI / 2);
+      plane(
+        HALL_LEN,
+        HALL_H,
+        v(-HALL_W / 2, HALL_H / 2, hallMidZ),
+        Math.PI / 2,
+      );
+      plane(
+        HALL_LEN,
+        HALL_H,
+        v(HALL_W / 2, HALL_H / 2, hallMidZ),
+        -Math.PI / 2,
+      );
       plane(HALL_W, HALL_H, v(0, HALL_H / 2, BACK_Z - HALL_LEN));
 
       function makeTerminal(x) {
         const terminal = new THREE.Group();
         const box = new THREE.Mesh(
           new THREE.BoxGeometry(TERMINAL_W, TERMINAL_H, TERMINAL_D),
-          new THREE.MeshStandardMaterial({ color: 0x888c90, metalness: 0.7, roughness: 0.4 })
+          new THREE.MeshStandardMaterial({
+            color: 0x888c90,
+            metalness: 0.7,
+            roughness: 0.4,
+          }),
         );
         box.position.y = TERMINAL_H / 2;
         box.castShadow = true;
@@ -276,7 +365,7 @@
         terminal.add(box);
         const screen = new THREE.Mesh(
           new THREE.PlaneGeometry(0.95, 0.95),
-          new THREE.MeshBasicMaterial({ color: 0x000000 })
+          new THREE.MeshBasicMaterial({ color: 0x000000 }),
         );
         screen.position.set(0, 1.45, TERMINAL_D / 2 + 0.01);
         terminal.add(screen);
@@ -287,15 +376,25 @@
       const terminals = [makeTerminal(-6), makeTerminal(6)];
 
       function terminalDistance(x, z, terminal) {
-        const dx = Math.max(Math.abs(x - terminal.position.x) - TERMINAL_W / 2, 0);
-        const dz = Math.max(Math.abs(z - terminal.position.z) - TERMINAL_D / 2, 0);
+        const dx = Math.max(
+          Math.abs(x - terminal.position.x) - TERMINAL_W / 2,
+          0,
+        );
+        const dz = Math.max(
+          Math.abs(z - terminal.position.z) - TERMINAL_D / 2,
+          0,
+        );
         return Math.hypot(dx, dz);
       }
 
       function makeBall(color, x) {
         const ball = new THREE.Mesh(
           new THREE.SphereGeometry(BALL_R, 32, 16),
-          new THREE.MeshStandardMaterial({ color, roughness: 0.3, metalness: 0.2 })
+          new THREE.MeshStandardMaterial({
+            color,
+            roughness: 0.3,
+            metalness: 0.2,
+          }),
         );
         ball.position.set(x, BALL_R, 4);
         ball.castShadow = true;
@@ -303,17 +402,38 @@
         return ball;
       }
       const players = [
-        { mesh: makeBall(0xff4444, -2), keys: { up: "KeyW", down: "KeyS", left: "KeyA", right: "KeyD" },
-          interact: "KeyQ", label: "Red", side: "left", terminal: terminals[0],
-          status: document.getElementById("red-terminal-status"), interacted: false },
-        { mesh: makeBall(0x4488ff, 2), keys: { up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight" },
-          interact: "KeyM", label: "Blue", side: "right", terminal: terminals[1],
-          status: document.getElementById("blue-terminal-status"), interacted: false },
+        {
+          mesh: makeBall(0xff4444, -2),
+          keys: { up: "KeyW", down: "KeyS", left: "KeyA", right: "KeyD" },
+          interact: "KeyQ",
+          label: "Red",
+          side: "left",
+          terminal: terminals[0],
+          status: document.getElementById("red-terminal-status"),
+          interacted: false,
+        },
+        {
+          mesh: makeBall(0x4488ff, 2),
+          keys: {
+            up: "ArrowUp",
+            down: "ArrowDown",
+            left: "ArrowLeft",
+            right: "ArrowRight",
+          },
+          interact: "KeyM",
+          label: "Blue",
+          side: "right",
+          terminal: terminals[1],
+          status: document.getElementById("blue-terminal-status"),
+          interacted: false,
+        },
       ];
 
       function nearTerminal(player) {
         const pos = player.mesh.position;
-        return terminalDistance(pos.x, pos.z, player.terminal) <= INTERACT_RANGE;
+        return (
+          terminalDistance(pos.x, pos.z, player.terminal) <= INTERACT_RANGE
+        );
       }
 
       function updateTerminalStatus(player) {
@@ -325,19 +445,29 @@
           : nearby
             ? `${player.label}: press ${key} to interact with the ${player.side} terminal.`
             : `${player.label}: approach the ${player.side} terminal to use ${key}.`;
-        if (player.status.textContent !== message) player.status.textContent = message;
+        if (player.status.textContent !== message)
+          player.status.textContent = message;
       }
 
       // Walkable area = room box OR hallway box, inset by the ball radius.
       function walkable(x, z) {
-        if (terminals.some((terminal) => terminalDistance(x, z, terminal) < BALL_R)) return false;
+        if (
+          terminals.some(
+            (terminal) => terminalDistance(x, z, terminal) < BALL_R,
+          )
+        )
+          return false;
         if (z > ROOM_D / 2 - BALL_R) return false;
-        const inRoom = Math.abs(x) <= ROOM_W / 2 - BALL_R && z >= BACK_Z + BALL_R;
-        const inHall = Math.abs(x) <= HALL_W / 2 - BALL_R && z >= BACK_Z - HALL_LEN + BALL_R;
+        const inRoom =
+          Math.abs(x) <= ROOM_W / 2 - BALL_R && z >= BACK_Z + BALL_R;
+        const inHall =
+          Math.abs(x) <= HALL_W / 2 - BALL_R && z >= BACK_Z - HALL_LEN + BALL_R;
         return inRoom || inHall;
       }
 
-      const isTyping = (e) => e.target.closest && e.target.closest("input, textarea, [contenteditable]");
+      const isTyping = (e) =>
+        e.target.closest &&
+        e.target.closest("input, textarea, [contenteditable]");
       const pressed = new Set();
       window.addEventListener("keydown", (e) => {
         if (isTyping(e)) return;
@@ -354,14 +484,17 @@
       });
       window.addEventListener("keyup", (e) => pressed.delete(e.code));
       window.addEventListener("blur", () => pressed.clear());
-      document.addEventListener("focusin", (e) => { if (isTyping(e)) pressed.clear(); });
+      document.addEventListener("focusin", (e) => {
+        if (isTyping(e)) pressed.clear();
+      });
 
       const clock = new THREE.Clock();
       function animate() {
         const dt = Math.min(clock.getDelta(), 0.05);
         for (const p of players) {
           updateTerminalStatus(p);
-          let dx = 0, dz = 0;
+          let dx = 0,
+            dz = 0;
           if (pressed.has(p.keys.up)) dz -= 1;
           if (pressed.has(p.keys.down)) dz += 1;
           if (pressed.has(p.keys.left)) dx -= 1;
@@ -370,8 +503,14 @@
           const step = (SPEED * dt) / Math.hypot(dx, dz);
           const pos = p.mesh.position;
           // Resolve each axis separately so balls slide along walls; rotate to look like rolling.
-          if (walkable(pos.x + dx * step, pos.z)) { pos.x += dx * step; p.mesh.rotation.z -= (dx * step) / BALL_R; }
-          if (walkable(pos.x, pos.z + dz * step)) { pos.z += dz * step; p.mesh.rotation.x += (dz * step) / BALL_R; }
+          if (walkable(pos.x + dx * step, pos.z)) {
+            pos.x += dx * step;
+            p.mesh.rotation.z -= (dx * step) / BALL_R;
+          }
+          if (walkable(pos.x, pos.z + dz * step)) {
+            pos.z += dz * step;
+            p.mesh.rotation.x += (dz * step) / BALL_R;
+          }
         }
         renderer.render(scene, camera);
         requestAnimationFrame(animate);
