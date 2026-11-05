@@ -1,5 +1,6 @@
+// Adapted from https://github.com/mrdoob/three.js/blob/master/examples/physics_rapier_basic.html
 
-import * as Three from 'three';
+import * as THREE from 'three';
 import { RapierPhysics } from 'three/addons/physics/RapierPhysics.js';
 
 class PhysicsEngine {
@@ -10,7 +11,8 @@ class PhysicsEngine {
         }
         this.scene = scene;
         this.physics = null;
-
+        this.world = null;
+        this.RAPIER = null;
     }
 
     /**
@@ -18,13 +20,17 @@ class PhysicsEngine {
      */
     async init() {
         this.physics = await RapierPhysics();
+        this.world = this.physics.world;
+        this.RAPIER = this.physics.RAPIER;
+
+        // Add scene to the physics world
         this.physics.addScene(this.scene);
     }
 
     /**
     * Adds the given mesh to this physics simulation..
     * 
-    * @param {Three.Mesh} mesh - The mesh to add.
+    * @param {THREE.Mesh} mesh - The mesh to add.
     * @param {number} mass - The mass in kg of the mesh.
     * @param {number} restitution - The restitution of the mesh, usually from 0 to 1. Represents how "bouncy" objects are when they collide with each other.
     */
@@ -35,7 +41,7 @@ class PhysicsEngine {
     /**
      * Removes the given mesh from this physics simulation.
      * 
-     * @param {Three.Mesh} mesh - The mesh to remove.
+     * @param {THREE.Mesh} mesh - The mesh to remove.
      */
     removeMesh(mesh) {
         this.physics.removeMesh(mesh);
