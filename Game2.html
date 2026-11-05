@@ -13,6 +13,13 @@
         color: var(--color-text); font-size: 0.85rem; background: rgba(0, 0, 0, 0.5);
         padding: 6px 10px; border-radius: 4px; pointer-events: none;
       }
+      #terminal-status {
+        position: absolute; z-index: 2; bottom: 60px; left: 50%; transform: translateX(-50%);
+        width: max-content; max-width: calc(100% - 32px); padding: 6px 10px;
+        color: var(--color-text); font-size: 0.85rem; background: rgba(0, 0, 0, 0.7);
+        border-radius: 4px; pointer-events: none;
+      }
+      #terminal-status p { margin: 4px 0; }
     </style>
     <script type="importmap">
       { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
@@ -27,7 +34,11 @@
           <a class="finish-room button" href="Complete.html">Finish room</a>
         </nav>
       </header>
-      <p id="hud">Red: W A S D &nbsp;|&nbsp; Blue: Arrow keys</p>
+      <p id="hud">Red: W A S D + Q to interact &nbsp;|&nbsp; Blue: Arrow keys + M to interact</p>
+      <div id="terminal-status">
+        <p id="red-terminal-status" role="status">Red: approach the left terminal to use Q.</p>
+        <p id="blue-terminal-status" role="status">Blue: approach the right terminal to use M.</p>
+      </div>
     </main>
     <button
       class="robot-face robot-face--full"
@@ -172,6 +183,8 @@
       const HALL_W = 4, HALL_H = 4, HALL_LEN = 14;
       const TILE_W = 2.5, TILE_H = 1.5; // world size of one Stonewall.png tile (matches image aspect)
       const BALL_R = 0.5, SPEED = 6;
+      const TERMINAL_W = 1.6, TERMINAL_H = 2.2, TERMINAL_D = 1.2;
+      const INTERACT_RANGE = 1.5;
       const BACK_Z = -ROOM_D / 2;
 
       const root = document.getElementById("game-root");
@@ -183,7 +196,7 @@
       root.prepend(renderer.domElement);
       // Make the scene focusable so clicking it takes focus back from the chat box.
       renderer.domElement.tabIndex = 0;
-      renderer.domElement.setAttribute("aria-label", "3D stone room with two player spheres");
+      renderer.domElement.setAttribute("aria-label", "3D stone room with two player spheres and two metal terminals");
       renderer.domElement.addEventListener("pointerdown", () => renderer.domElement.focus());
 
       const scene = new THREE.Scene();
@@ -251,6 +264,34 @@
       plane(HALL_LEN, HALL_H, v(HALL_W / 2, HALL_H / 2, hallMidZ), -Math.PI / 2);
       plane(HALL_W, HALL_H, v(0, HALL_H / 2, BACK_Z - HALL_LEN));
 
+      function makeTerminal(x) {
+        const terminal = new THREE.Group();
+        const box = new THREE.Mesh(
+          new THREE.BoxGeometry(TERMINAL_W, TERMINAL_H, TERMINAL_D),
+          new THREE.MeshStandardMaterial({ color: 0x888c90, metalness: 0.7, roughness: 0.4 })
+        );
+        box.position.y = TERMINAL_H / 2;
+        box.castShadow = true;
+        box.receiveShadow = true;
+        terminal.add(box);
+        const screen = new THREE.Mesh(
+          new THREE.PlaneGeometry(0.95, 0.95),
+          new THREE.MeshBasicMaterial({ color: 0x000000 })
+        );
+        screen.position.set(0, 1.45, TERMINAL_D / 2 + 0.01);
+        terminal.add(screen);
+        terminal.position.set(x, 0, -4);
+        scene.add(terminal);
+        return terminal;
+      }
+      const terminals = [makeTerminal(-6), makeTerminal(6)];
+
+      function terminalDistance(x, z, terminal) {
+        const dx = Math.max(Math.abs(x - terminal.position.x) - TERMINAL_W / 2, 0);
+        const dz = Math.max(Math.abs(z - terminal.position.z) - TERMINAL_D / 2, 0);
+        return Math.hypot(dx, dz);
+      }
+
       function makeBall(color, x) {
         const ball = new THREE.Mesh(
           new THREE.SphereGeometry(BALL_R, 32, 16),
@@ -262,12 +303,34 @@
         return ball;
       }
       const players = [
-        { mesh: makeBall(0xff4444, -2), keys: { up: "KeyW", down: "KeyS", left: "KeyA", right: "KeyD" } },
-        { mesh: makeBall(0x4488ff, 2), keys: { up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight" } },
+        { mesh: makeBall(0xff4444, -2), keys: { up: "KeyW", down: "KeyS", left: "KeyA", right: "KeyD" },
+          interact: "KeyQ", label: "Red", side: "left", terminal: terminals[0],
+          status: document.getElementById("red-terminal-status"), interacted: false },
+        { mesh: makeBall(0x4488ff, 2), keys: { up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight" },
+          interact: "KeyM", label: "Blue", side: "right", terminal: terminals[1],
+          status: document.getElementById("blue-terminal-status"), interacted: false },
       ];
+
+      function nearTerminal(player) {
+        const pos = player.mesh.position;
+        return terminalDistance(pos.x, pos.z, player.terminal) <= INTERACT_RANGE;
+      }
+
+      function updateTerminalStatus(player) {
+        const nearby = nearTerminal(player);
+        if (!nearby) player.interacted = false;
+        const key = player.interact.slice(3);
+        const message = player.interacted
+          ? `${player.label}: interacted with the ${player.side} terminal.`
+          : nearby
+            ? `${player.label}: press ${key} to interact with the ${player.side} terminal.`
+            : `${player.label}: approach the ${player.side} terminal to use ${key}.`;
+        if (player.status.textContent !== message) player.status.textContent = message;
+      }
 
       // Walkable area = room box OR hallway box, inset by the ball radius.
       function walkable(x, z) {
+        if (terminals.some((terminal) => terminalDistance(x, z, terminal) < BALL_R)) return false;
         if (z > ROOM_D / 2 - BALL_R) return false;
         const inRoom = Math.abs(x) <= ROOM_W / 2 - BALL_R && z >= BACK_Z + BALL_R;
         const inHall = Math.abs(x) <= HALL_W / 2 - BALL_R && z >= BACK_Z - HALL_LEN + BALL_R;
@@ -280,6 +343,14 @@
         if (isTyping(e)) return;
         if (e.code.startsWith("Arrow")) e.preventDefault();
         pressed.add(e.code);
+        if (!e.repeat) {
+          for (const player of players) {
+            if (e.code === player.interact && nearTerminal(player)) {
+              player.interacted = true;
+              updateTerminalStatus(player);
+            }
+          }
+        }
       });
       window.addEventListener("keyup", (e) => pressed.delete(e.code));
       window.addEventListener("blur", () => pressed.clear());
@@ -289,6 +360,7 @@
       function animate() {
         const dt = Math.min(clock.getDelta(), 0.05);
         for (const p of players) {
+          updateTerminalStatus(p);
           let dx = 0, dz = 0;
           if (pressed.has(p.keys.up)) dz -= 1;
           if (pressed.has(p.keys.down)) dz += 1;
