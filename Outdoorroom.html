@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Outdoor Room - The Enigma Escape Room</title>
+    <link rel="stylesheet" href="Style.css" />
+    <link rel="stylesheet" href="Game.css" />
+    <style>
+      .game-page #game-root {
+        border: 0;
+      }
+      #game-root canvas {
+        position: absolute;
+        inset: 0;
+        display: block;
+      }
+      #scene-status {
+        position: absolute;
+        z-index: 2;
+        top: 24px;
+        left: 24px;
+        margin: 0;
+        padding: 8px 12px;
+        color: var(--color-text);
+        background: var(--color-surface);
+      }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+        }
+      }
+    </script>
+  </head>
+  <body class="game-page">
+    <main id="game-root" aria-label="Outdoor room with two streams">
+      <p id="scene-status" role="status">Loading outdoor room...</p>
+    </main>
+    <button
+      class="robot-face robot-face--full"
+      id="robot-chat-toggle"
+      type="button"
+      aria-label="Open game guide chat"
+      aria-controls="robot-chat"
+      aria-expanded="false"
+      data-ai-mode="full"
+      hidden
+    >
+      <span class="antenna left"></span>
+      <span class="antenna right"></span>
+      <span class="top-piece"></span>
+      <span class="ear left"></span>
+      <span class="ear right"></span>
+      <span class="head"></span>
+      <span class="eye left"><span class="pupil"></span></span>
+      <span class="eye right"><span class="pupil"></span></span>
+      <span class="mouth">
+        <span class="tooth"></span>
+        <span class="tooth"></span>
+        <span class="tooth"></span>
+        <span class="tooth"></span>
+        <span class="tooth"></span>
+      </span>
+    </button>
+    <button
+      class="robot-face robot-face--collaborative"
+      id="collaborative-robot-chat-toggle"
+      type="button"
+      aria-label="Open collaborative game guide chat"
+      aria-controls="collaborative-robot-chat"
+      aria-expanded="false"
+      data-ai-mode="collaborative"
+      hidden
+    >
+      <span class="antenna left"></span>
+      <span class="antenna right"></span>
+      <span class="top-piece"></span>
+      <span class="ear left"></span>
+      <span class="ear right"></span>
+      <span class="head"></span>
+      <span class="eye left"><span class="pupil"></span></span>
+      <span class="eye right"><span class="pupil"></span></span>
+      <span class="mouth">
+        <span class="tooth"></span>
+        <span class="tooth"></span>
+        <span class="tooth"></span>
+        <span class="tooth"></span>
+        <span class="tooth"></span>
+      </span>
+    </button>
+    <section
+      class="robot-chat"
+      id="robot-chat"
+      data-ai-mode="full"
+      role="dialog"
+      aria-labelledby="robot-chat-title"
+      aria-describedby="robot-chat-message"
+      tabindex="-1"
+      hidden
+    >
+      <header class="robot-chat-header">
+        <h2 id="robot-chat-title">Game Guide</h2>
+        <button class="robot-chat-close" type="button" aria-label="Close chat">
+          &times;
+        </button>
+      </header>
+      <p class="robot-chat-message" id="robot-chat-message">
+        Hi! I'm your A.I. game assistant, here to help you escape!
+      </p>
+      <label class="robot-chat-label" for="robot-chat-input"
+        >Your message</label
+      >
+      <div class="robot-chat-composer">
+        <textarea
+          id="robot-chat-input"
+          class="robot-chat-input"
+          rows="2"
+          placeholder="Type a message..."
+          aria-describedby="robot-chat-note"
+        ></textarea>
+        <button type="button" disabled>Send</button>
+      </div>
+      <p class="robot-chat-note" id="robot-chat-note">
+        Preview only. Messages are not sent.
+      </p>
+    </section>
+    <section
+      class="robot-chat"
+      id="collaborative-robot-chat"
+      data-ai-mode="collaborative"
+      role="dialog"
+      aria-labelledby="collaborative-robot-chat-title"
+      aria-describedby="collaborative-robot-chat-message"
+      tabindex="-1"
+      hidden
+    >
+      <header class="robot-chat-header">
+        <h2 id="collaborative-robot-chat-title">Collaborative Game Guide</h2>
+        <button class="robot-chat-close" type="button" aria-label="Close chat">
+          &times;
+        </button>
+      </header>
+      <p class="robot-chat-message" id="collaborative-robot-chat-message">
+        Hi! I'm your A.I. collaborator, here to help you and your team escape!
+      </p>
+      <label class="robot-chat-label" for="collaborative-robot-chat-input"
+        >Your message</label
+      >
+      <div class="robot-chat-composer">
+        <textarea
+          id="collaborative-robot-chat-input"
+          class="robot-chat-input"
+          rows="2"
+          placeholder="Type a message..."
+          aria-describedby="collaborative-robot-chat-note"
+        ></textarea>
+        <button type="button" disabled>Send</button>
+      </div>
+      <p class="robot-chat-note" id="collaborative-robot-chat-note">
+        Preview only. Messages are not sent.
+      </p>
+    </section>
+    <script src="Assistant.js"></script>
+    <script type="module">
+      const status = document.getElementById("scene-status");
+
+      try {
+        const THREE = await import("three");
+        const ROOM_W = 26,
+          ROOM_D = 16,
+          STREAM_D = 2;
+        const root = document.getElementById("game-root");
+        const renderer = new THREE.WebGLRenderer({
+          antialias: true,
+          alpha: true,
+        });
+        renderer.setClearColor(0x000000, 0);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(root.clientWidth, root.clientHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.1;
+        renderer.domElement.setAttribute("role", "img");
+        renderer.domElement.setAttribute(
+          "aria-label",
+          "Grassy outdoor clearing with two water streams, four slatted wooden docks on round legs, and a stone back wall with a wooden door",
+        );
+        root.prepend(renderer.domElement);
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(
+          55,
+          root.clientWidth / root.clientHeight,
+          0.1,
+          200,
+        );
+        camera.position.set(0, 13, ROOM_D / 2 + 9);
+        camera.lookAt(0, 0, -3);
+        camera.zoom = 1.1;
+        camera.updateProjectionMatrix();
+
+        scene.add(new THREE.HemisphereLight(0xdceeff, 0x746044, 0.9));
+        const sun = new THREE.DirectionalLight(0xffefd1, 2.6);
+        sun.position.set(-8, 16, 4);
+        sun.castShadow = true;
+        sun.shadow.mapSize.set(2048, 2048);
+        Object.assign(sun.shadow.camera, {
+          left: -18,
+          right: 18,
+          top: 18,
+          bottom: -18,
+          near: 0.5,
+          far: 60,
+        });
+        sun.shadow.normalBias = 0.03;
+        sun.shadow.bias = -0.0001;
+        scene.add(sun);
+
+        const loader = new THREE.TextureLoader();
+        const [grassTexture, waterTexture, stoneTexture] = await Promise.all([
+          loader.loadAsync("Grass.png"),
+          loader.loadAsync("Water.png"),
+          loader.loadAsync("Stonewall.png"),
+        ]);
+
+        function tiledTexture(baseTexture, width, height, tileWidth) {
+          const texture = baseTexture.clone();
+          texture.colorSpace = THREE.SRGBColorSpace;
+          texture.wrapS = texture.wrapT =
+            baseTexture === grassTexture
+              ? THREE.MirroredRepeatWrapping
+              : THREE.RepeatWrapping;
+          const tileHeight =
+            (tileWidth * baseTexture.image.height) / baseTexture.image.width;
+          texture.repeat.set(width / tileWidth, height / tileHeight);
+          texture.needsUpdate = true;
+          return texture;
+        }
+
+        function surface(baseTexture, depth, z, tileWidth, roughness) {
+          const texture = tiledTexture(baseTexture, ROOM_W, depth, tileWidth);
+          const tileDepth =
+            (tileWidth * baseTexture.image.height) / baseTexture.image.width;
+          texture.offset.y = (ROOM_D / 2 - z - depth / 2) / tileDepth;
+
+          const mesh = new THREE.Mesh(
+            new THREE.PlaneGeometry(ROOM_W, depth),
+            new THREE.MeshStandardMaterial({ map: texture, roughness }),
+          );
+          mesh.rotation.x = -Math.PI / 2;
+          mesh.position.set(0, 0, z);
+          mesh.receiveShadow = true;
+          scene.add(mesh);
+          return texture;
+        }
+
+        // Separate grass bands leave two actual gaps for the water, without overlapping surfaces.
+        const waterTextures = [];
+        surface(grassTexture, 4, -6, 3, 0.95);
+        waterTextures.push(surface(waterTexture, STREAM_D, -3, 3, 0.35));
+        surface(grassTexture, 4, 0, 3, 0.95);
+        waterTextures.push(surface(waterTexture, STREAM_D, 3, 3, 0.35));
+        surface(grassTexture, 4, 6, 3, 0.95);
+
+        const woodPixels = new Uint8Array(128 * 128 * 4);
+        for (let y = 0; y < 128; y++) {
+          for (let x = 0; x < 128; x++) {
+            const grain = Math.round(
+              12 * Math.sin(y * 0.65 + 1.5 * Math.sin(x * 0.05)) +
+              5 * Math.sin(y * 2.6 + x * 0.08),
+            );
+            woodPixels.set([145 + grain, 96 + grain, 52 + grain, 255], (y * 128 + x) * 4);
+          }
+        }
+        const woodTexture = new THREE.DataTexture(woodPixels, 128, 128);
+        woodTexture.colorSpace = THREE.SRGBColorSpace;
+        woodTexture.wrapS = woodTexture.wrapT = THREE.RepeatWrapping;
+        woodTexture.needsUpdate = true;
+        const dockWood = new THREE.MeshStandardMaterial({
+          map: woodTexture,
+          roughness: 0.9,
+        });
+        const slatGeometry = new THREE.BoxGeometry(2.4, 0.14, 0.2);
+        const supportGeometry = new THREE.BoxGeometry(0.14, 0.16, 1.35);
+        const legGeometry = new THREE.CylinderGeometry(0.11, 0.11, 0.8, 12);
+
+        function dock(streamZ, bank) {
+          const group = new THREE.Group();
+          group.name = `dock-${streamZ}-${bank}`;
+          group.position.set(0, 0, streamZ + bank * 1.15);
+          function piece(geometry, x, y, z) {
+            const mesh = new THREE.Mesh(geometry, dockWood);
+            mesh.position.set(x, y, z);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            group.add(mesh);
+          }
+          for (let i = 0; i < 6; i++) {
+            piece(slatGeometry, 0, 0.4, (i - 2.5) * 0.23);
+          }
+          for (const x of [-0.95, 0.95]) {
+            piece(supportGeometry, x, 0.25, 0);
+            for (const z of [-0.5, 0.5]) {
+              piece(legGeometry, x, -0.07, z);
+            }
+          }
+          scene.add(group);
+        }
+        for (const streamZ of [-3, 3]) {
+          for (const bank of [-1, 1]) {
+            dock(streamZ, bank);
+          }
+        }
+
+        const WALL_H = 5,
+          DOOR_W = 3,
+          DOOR_H = 4;
+        const BACK_Z = -ROOM_D / 2;
+        const sideWidth = (ROOM_W - DOOR_W) / 2;
+
+        function wall(width, height, x, y) {
+          const mesh = new THREE.Mesh(
+            new THREE.PlaneGeometry(width, height),
+            new THREE.MeshStandardMaterial({
+              map: tiledTexture(stoneTexture, width, height, 2.5),
+              roughness: 0.9,
+              side: THREE.DoubleSide,
+            }),
+          );
+          mesh.position.set(x, y, BACK_Z);
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          scene.add(mesh);
+        }
+
+        wall(sideWidth, WALL_H, -(DOOR_W + sideWidth) / 2, WALL_H / 2);
+        wall(sideWidth, WALL_H, (DOOR_W + sideWidth) / 2, WALL_H / 2);
+        wall(DOOR_W, WALL_H - DOOR_H, 0, (WALL_H + DOOR_H) / 2);
+
+        const roofDepth = 4;
+        const roofThickness = 0.2;
+        const roofAngle = 0.12;
+        const roofWidth = ROOM_W + 0.4;
+        const roofCenterZ = BACK_Z - roofDepth / 2;
+        const roofCenterY =
+          WALL_H -
+          roofThickness / 2 +
+          (roofDepth / 2) * Math.sin(roofAngle);
+        const roofMaterial = new THREE.MeshStandardMaterial({
+          map: tiledTexture(stoneTexture, roofWidth, roofDepth, 2.5),
+          roughness: 0.9,
+          side: THREE.DoubleSide,
+        });
+        const roof = new THREE.Mesh(
+          new THREE.BoxGeometry(roofWidth, roofThickness, roofDepth),
+          roofMaterial,
+        );
+        roof.position.set(0, roofCenterY, roofCenterZ);
+        roof.rotation.x = roofAngle;
+        roof.castShadow = true;
+        roof.receiveShadow = true;
+        scene.add(roof);
+
+        const roofLipHeight = 0.35;
+        const roofLipDepth = 0.25;
+        const roofLipMaterial = new THREE.MeshStandardMaterial({
+          map: tiledTexture(stoneTexture, roofWidth, roofLipHeight, 2.5),
+          roughness: 0.9,
+        });
+        const frontLip = new THREE.Mesh(
+          new THREE.BoxGeometry(roofWidth, roofLipHeight, roofLipDepth),
+          roofLipMaterial,
+        );
+        frontLip.position.set(
+          0,
+          WALL_H + roofLipHeight / 2,
+          BACK_Z - roofLipDepth / 2,
+        );
+        frontLip.castShadow = true;
+        frontLip.receiveShadow = true;
+        scene.add(frontLip);
+
+        for (const x of [
+          -roofWidth / 2 + roofLipDepth / 2,
+          roofWidth / 2 - roofLipDepth / 2,
+        ]) {
+          const sideLip = new THREE.Mesh(
+            new THREE.BoxGeometry(
+              roofLipDepth,
+              roofLipHeight,
+              roofDepth,
+            ),
+            new THREE.MeshStandardMaterial({
+              map: tiledTexture(stoneTexture, roofLipDepth, roofDepth, 2.5),
+              roughness: 0.9,
+            }),
+          );
+          sideLip.position.set(
+            x,
+            roofCenterY + roofThickness / 2 + roofLipHeight / 2,
+            roofCenterZ,
+          );
+          sideLip.rotation.x = roofAngle;
+          sideLip.castShadow = true;
+          sideLip.receiveShadow = true;
+          scene.add(sideLip);
+        }
+
+        const wood = new THREE.MeshStandardMaterial({
+          color: 0x654229,
+          roughness: 0.85,
+        });
+        const frame = new THREE.MeshStandardMaterial({
+          color: 0x34251a,
+          roughness: 0.9,
+        });
+        const brass = new THREE.MeshStandardMaterial({
+          color: 0xc58b36,
+          metalness: 0.65,
+          roughness: 0.35,
+        });
+
+        function doorPiece(width, height, depth, x, y, z, material) {
+          const mesh = new THREE.Mesh(
+            new THREE.BoxGeometry(width, height, depth),
+            material,
+          );
+          mesh.position.set(x, y, z);
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          scene.add(mesh);
+        }
+
+        doorPiece(DOOR_W, DOOR_H, 0.16, 0, DOOR_H / 2, BACK_Z, frame);
+        for (let i = 0; i < 6; i++) {
+          doorPiece(
+            0.48,
+            DOOR_H - 0.12,
+            0.12,
+            -1.25 + i * 0.5,
+            DOOR_H / 2,
+            BACK_Z + 0.1,
+            wood,
+          );
+        }
+        doorPiece(
+          0.2,
+          DOOR_H,
+          0.3,
+          -DOOR_W / 2,
+          DOOR_H / 2,
+          BACK_Z + 0.1,
+          frame,
+        );
+        doorPiece(
+          0.2,
+          DOOR_H,
+          0.3,
+          DOOR_W / 2,
+          DOOR_H / 2,
+          BACK_Z + 0.1,
+          frame,
+        );
+        doorPiece(DOOR_W + 0.2, 0.2, 0.3, 0, DOOR_H - 0.1, BACK_Z + 0.1, frame);
+        const handle = new THREE.Mesh(
+          new THREE.SphereGeometry(0.1, 16, 8),
+          brass,
+        );
+        handle.position.set(1, 1.8, BACK_Z + 0.25);
+        handle.castShadow = true;
+        handle.receiveShadow = true;
+        scene.add(handle);
+
+
+        const waterClock = new THREE.Clock();
+        const waterFlowSpeed = 0.15;
+
+        function animateWater() {
+          const elapsed = Math.min(waterClock.getDelta(), 0.05);
+          for (const [index, texture] of waterTextures.entries()) {
+            const direction = index === 0 ? -1 : 1;
+            texture.offset.x =
+              (texture.offset.x + direction * waterFlowSpeed * elapsed) % 1;
+          }
+          renderer.render(scene, camera);
+        }
+        window.addEventListener("resize", () => {
+          camera.aspect = root.clientWidth / root.clientHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(root.clientWidth, root.clientHeight);
+        });
+        renderer.setAnimationLoop(animateWater);
+        status.hidden = true;
+      } catch (error) {
+        console.error("Unable to load the outdoor room:", error);
+        status.textContent =
+          "Unable to load the outdoor room. Check the Three.js connection and Grass.png / Water.png / Stonewall.png files.";
+      }
+    </script>
+  </body>
+</html>
