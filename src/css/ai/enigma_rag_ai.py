@@ -92,10 +92,80 @@ def retrieve_chunks(collection, query, top_k=3):
         })
     return retrieved
 
-GUARDRAIL = (# This is a guardrail for the LLM to ensure it only uses the provided context to answer questions.
-    "Answer the question using ONLY the provided context. "
-    "If the answer is not in the context, say 'I can't answer that. Try asking something related to the Enigma escape room."
-)
+FULL_RULES = [
+
+    (# This is a guardrail for the LLM to ensure it only uses the provided context to answer questions.
+        "You are a helper inside the Enigma escape room. "
+        "Use ONLY the provided context for facts about the room. "
+        "If the answer is not in the context, reply exactly: "
+        "\"I can't answer that. Try asking something related to the Enigma escape room.\""
+    ),
+    (
+        "SPECIAL CASE, vague or stuck: if the player says something is not working, "
+        "or that they are stuck or don't know what to do, without saying what they tried, "
+        "do not guess the cause and do not use the line above. "
+        "Ask ONE short question about what they changed last or what a readout in the room "
+        "is showing.\n"
+        "Example:\n"
+        "Player: it's not working\n"
+        "You: What did you change last, and what did the analyzer show afterward?"
+    ),
+    (
+        "Use the recent conversation to understand references in the player's latest message "
+        "(for example, 'it' or 'that number'). Use the active room's retrieved context for "
+        "room facts. If the latest message and conversation still don't provide enough detail, "
+        "ask one concise clarifying question instead of guessing."
+    )
+
+]
+SOCRATIC_RULES = [
+    (# This is a guardrail for the LLM to ensure it only uses the provided context to answer questions.
+        "You are a teachers helper inside the Enigma escape room. "
+        "Use ONLY the provided context for facts about the room. "
+        "Never give the answer directly. Instead, ask questions that guide the player to think critically and discover the answer themselves. "
+        "If the answer is not in the context, reply exactly: "
+        "\"I don't have an answer for that. Try asking something related to the Enigma escape room.\""
+    ),
+    (
+        "SPECIAL CASE, player says to just give the answer: if the player says to just give the answer, "
+        "do not give the answer. Instead, respond with a hint or a question that encourages them to think and try again."
+        "Example:\n"
+        "Player: Just give me the answer\n"
+        "You: I can't do that. Try asking a question about the clues in the room or what you've tried so far."
+    ),
+        (
+        "SPECIAL CASE, vague or stuck: if the player says something is not working, "
+        "or that they are stuck or don't know what to do, without saying what they tried, "
+        "do not guess the cause and do not use the line above. "
+        "Ask ONE short question about what they changed last or what a readout in the room "
+        "is showing.\n"
+        "Example:\n"
+        "Player: it's not working\n"
+        "You: What did you change last, and what did the analyzer show afterward?"
+    ),     
+    (
+        "SPECIAL CASE, player asks for a hint: if the player asks for a hint, "
+        "provide a subtle clue to guide them without giving away the answer."
+        "Example:\n"
+        "Player: I need a hint\n"
+        "You: Think about the colors in the room and how they might relate to the puzzle."
+    ),
+    (
+        "Use the recent conversation to understand references in the player's latest message "
+        "(for example, 'it' or 'that number'). Use the active room's retrieved context for "
+        "room facts. If the latest message and conversation still don't provide enough detail, "
+        "ask one concise clarifying question instead of guessing."
+    )
+
+]
+
+def get_system_rules(mode):
+    if mode == "socratic":
+        return "\n\n".join(SOCRATIC_RULES)
+
+    # Full mode answers directly, while still staying grounded in the room context.
+    return "\n\n".join(FULL_RULES)
+
 
 def build_prompt(question, retrieved_chunks):
     # Merge the retrieved chunks into one context block
@@ -109,20 +179,29 @@ Question: {question}
 Answer:"""
 
 
-def generate_answer(client, question, retrieved_chunks):
+def generate_answer(client, question, retrieved_chunks, mode, history):
     prompt = build_prompt(question, retrieved_chunks)
 
     response = client.chat.completions.create(
         model="openai/gpt-oss-20b",
         messages=[
-            {"role": "system", "content": GUARDRAIL},
+            {"role": "system", "content": get_system_rules(mode)},
+            *history[-6:],  # Include the last 3 answers and questions for context (6 messages total)
             {"role": "user", "content": prompt},
         ],
         max_tokens=1000,
     )
-    text = response.choices[0].message.content
-    return text or "Sorry, I couldn't come up with a response. Please try again."
 
+    text = response.choices[0].message.content
+    text = text or "Sorry, I couldn't come up with a response. Please try again."
+
+    history.extend([   
+        {"role": "user", "content": question},
+        {"role": "assistant", "content": text},
+    ])
+    del history[0:-6]  # Keep only the last 6 messages in history
+
+    return text
 
 
 if __name__ == "__main__":
@@ -157,7 +236,10 @@ if __name__ == "__main__":
     # 4. Retrieve, generate, display
     retrieved_chunks = retrieve_chunks(collection, query)
     try:
-        answer = generate_answer(client, query, retrieved_chunks)
+        #TEMP VALUES REPLACE WITH WEBSITE INPUTS
+        mode = "socratic"  # Change to "full" for direct answers
+        history = []  # Initialize an empty history for the conversation
+        answer = generate_answer(client, query, retrieved_chunks, mode, history)
     except Exception as e:
         traceback.print_exc()
         print(f"Error calling the Groq API: {e}")
