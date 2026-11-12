@@ -12,7 +12,7 @@ class PlayerController {
     }
 
     /**
-     * Initializes the physics enigine and adds the scene
+     * Initializes the character controller
      */
     #init() {
         // Rapier Character Controller
@@ -39,7 +39,11 @@ class PlayerController {
         // Player movement
         const distance = speed * delta;
         const moveVector = new this.physics.RAPIER.Vector3(movement.right * distance, 0, -movement.forward * distance);
-        this.characterController.computeColliderMovement(collider, moveVector);
+        this.characterController.computeColliderMovement(
+            collider, 
+            moveVector, 
+            this.physics.RAPIER.QueryFilterFlags.EXCLUDE_SENSORS
+        );
 
         // Return the results
         return this.characterController.computedMovement();
