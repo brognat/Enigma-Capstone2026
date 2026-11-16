@@ -1,10 +1,23 @@
 import os
 import chromadb
+from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
 import getpass
 import traceback
 from openai import OpenAI
 
+load_dotenv()  # Load environment variables from .env file
+
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DOCS_DIR = os.path.join(BASE_DIR, "documents_enigma")
+CHROMA_DIR = os.path.join(BASE_DIR, "chroma_storage")
+
+FALLBACK_LINE = "I can't answer that. Try asking something related to the Enigma escape room."
+
+MODEL_NAME = "openai/gpt-oss-20b"
+HISTORY_MESSAGES = 6          # last 3 exchanges = 6 messages
+VALID_MODES = ("socratic", "full", "none")
 
 def load_text_files(folder_path):
     # Read all .txt files from a folder and return their contents.
@@ -92,79 +105,71 @@ def retrieve_chunks(collection, query, top_k=3):
         })
     return retrieved
 
-FULL_RULES = [
+HISTORY_RULE = (
+    "Use the recent conversation to understand references in the player's latest message "
+    "(for example, 'it' or 'that number'). Use the active room's retrieved context for "
+    "room facts. If the latest message and conversation still don't provide enough detail, "
+    "ask one concise clarifying question instead of guessing."
+)
 
-    (# This is a guardrail for the LLM to ensure it only uses the provided context to answer questions.
+VAGUE_RULE = (
+    "SPECIAL CASE, vague or stuck: if the player says something is not working, "
+    "or that they are stuck or don't know what to do, without saying what they tried, "
+    "do not guess the cause and do not use the line above. "
+    "Ask ONE short question about what they changed last or what a readout in the room "
+    "is showing.\n"
+    "Example:\n"
+    "Player: it's not working\n"
+    "You: What did you change last, and what did the analyzer show afterward?"
+)
+
+FULL_RULES = [
+    (
         "You are a helper inside the Enigma escape room. "
         "Use ONLY the provided context for facts about the room. "
         "If the answer is not in the context, reply exactly: "
-        "\"I can't answer that. Try asking something related to the Enigma escape room.\""
+        f"\"{FALLBACK_LINE}\""
     ),
-    (
-        "SPECIAL CASE, vague or stuck: if the player says something is not working, "
-        "or that they are stuck or don't know what to do, without saying what they tried, "
-        "do not guess the cause and do not use the line above. "
-        "Ask ONE short question about what they changed last or what a readout in the room "
-        "is showing.\n"
-        "Example:\n"
-        "Player: it's not working\n"
-        "You: What did you change last, and what did the analyzer show afterward?"
-    ),
-    (
-        "Use the recent conversation to understand references in the player's latest message "
-        "(for example, 'it' or 'that number'). Use the active room's retrieved context for "
-        "room facts. If the latest message and conversation still don't provide enough detail, "
-        "ask one concise clarifying question instead of guessing."
-    )
-
+    VAGUE_RULE,
+    HISTORY_RULE,
 ]
+
 SOCRATIC_RULES = [
-    (# This is a guardrail for the LLM to ensure it only uses the provided context to answer questions.
-        "You are a teachers helper inside the Enigma escape room. "
+    (
+        "You are a teacher's helper inside the Enigma escape room. "
         "Use ONLY the provided context for facts about the room. "
-        "Never give the answer directly. Instead, ask questions that guide the player to think critically and discover the answer themselves. "
+        "Never give the answer directly. Instead, ask questions that guide the player "
+        "to think critically and discover the answer themselves. "
         "If the answer is not in the context, reply exactly: "
-        "\"I don't have an answer for that. Try asking something related to the Enigma escape room.\""
+        f"\"{FALLBACK_LINE}\""
     ),
     (
-        "SPECIAL CASE, player says to just give the answer: if the player says to just give the answer, "
-        "do not give the answer. Instead, respond with a hint or a question that encourages them to think and try again."
+        "SPECIAL CASE, player says to just give the answer: if the player says to just "
+        "give the answer, do not give the answer. Instead, respond with a hint or a "
+        "question that encourages them to think and try again.\n"
         "Example:\n"
         "Player: Just give me the answer\n"
-        "You: I can't do that. Try asking a question about the clues in the room or what you've tried so far."
+        "You: I can't do that. Try asking a question about the clues in the room "
+        "or what you've tried so far."
     ),
-        (
-        "SPECIAL CASE, vague or stuck: if the player says something is not working, "
-        "or that they are stuck or don't know what to do, without saying what they tried, "
-        "do not guess the cause and do not use the line above. "
-        "Ask ONE short question about what they changed last or what a readout in the room "
-        "is showing.\n"
-        "Example:\n"
-        "Player: it's not working\n"
-        "You: What did you change last, and what did the analyzer show afterward?"
-    ),     
+    VAGUE_RULE,
     (
-        "SPECIAL CASE, player asks for a hint: if the player asks for a hint, "
-        "provide a subtle clue to guide them without giving away the answer."
+        "SPECIAL CASE, player asks for a hint: do not state any settings or values. "
+        "Give a subtle nudge as ONE guiding question about a control or readout in the room.\n"
         "Example:\n"
         "Player: I need a hint\n"
-        "You: Think about the colors in the room and how they might relate to the puzzle."
+        "You: What does the readout show after your last attempt, and how is it "
+        "different from what you want?"
     ),
-    (
-        "Use the recent conversation to understand references in the player's latest message "
-        "(for example, 'it' or 'that number'). Use the active room's retrieved context for "
-        "room facts. If the latest message and conversation still don't provide enough detail, "
-        "ask one concise clarifying question instead of guessing."
-    )
-
+    HISTORY_RULE,
 ]
 
 def get_system_rules(mode):
     if mode == "socratic":
         return "\n\n".join(SOCRATIC_RULES)
-
-    # Full mode answers directly, while still staying grounded in the room context.
-    return "\n\n".join(FULL_RULES)
+    if mode == "full":
+        return "\n\n".join(FULL_RULES)
+    raise ValueError(f"Unknown mode: {mode!r}")
 
 
 def build_prompt(question, retrieved_chunks):
@@ -179,17 +184,18 @@ Question: {question}
 Answer:"""
 
 
-def generate_answer(client, question, retrieved_chunks, mode, history):
+def generate_answer(client, question, retrieved_chunks, rules, history):
     prompt = build_prompt(question, retrieved_chunks)
 
     response = client.chat.completions.create(
-        model="openai/gpt-oss-20b",
+        model= MODEL_NAME,
         messages=[
-            {"role": "system", "content": get_system_rules(mode)},
-            *history[-6:],  # Include the last 3 answers and questions for context (6 messages total)
+            {"role": "system", "content": rules},
+            *history[-HISTORY_MESSAGES:],  # Include the last 3 answers and questions for context (6 messages total)
             {"role": "user", "content": prompt},
         ],
         max_tokens=1000,
+        temperature=0.2,
     )
 
     text = response.choices[0].message.content
@@ -199,26 +205,61 @@ def generate_answer(client, question, retrieved_chunks, mode, history):
         {"role": "user", "content": question},
         {"role": "assistant", "content": text},
     ])
-    del history[0:-6]  # Keep only the last 6 messages in history
+    del history[0:-HISTORY_MESSAGES]  # Keep only the last 6 messages in history
 
     return text
 
+SESSIONS = {}  # Dictionary to hold session data
+
+def start_session(session_id, mode):
+    if mode not in VALID_MODES:
+        raise ValueError(f"Unknown mode: {mode!r}")
+
+    SESSIONS[session_id] = {
+        "mode": mode,
+        "rules": get_system_rules(mode) if mode != "none" else None,
+        "history": [],
+    }
+
+
+def handle_message(client, collection, session_id, message):
+    #only session id and text come through from the website
+    sessions = SESSIONS.get(session_id)
+    if not sessions:
+        raise ValueError(f"Unknown session {session_id!r}. Start it first.")
+    
+    if sessions["mode"] == "none":
+        return "No mode selected. Please start a session with a valid mode."
+    
+    history = sessions["history"]
+
+    # Search with the previous question too, so follow-ups like "why not?" still retrieve well  
+    last_question = history[-2]["content"] if len(history) >= 2 else ""
+    search_text = f"{last_question} {message}".strip()
+
+    chunks = retrieve_chunks(collection, search_text)
+    answer = generate_answer(client, message, chunks, sessions["rules"], history)
+
+    return answer
+
+
+
 
 if __name__ == "__main__":
-    # 1. Ask for the key (hidden as they type)
-    groq_token = getpass.getpass("Enter your Groq API key: ").strip()#keep key confidential by using getpass to hide input
-    if not groq_token:
-        print("No key entered. Exiting.")
-        exit()
+
+    TEST_MODE = "socratic"  # Change to "full" for direct answers, or "none" for no mode
+
+    groq_key = os.environ.get("api_key")
+
 
     client = OpenAI(
             base_url="https://api.groq.com/openai/v1",
-            api_key=groq_token,
+            api_key=groq_key,
     )
 
     # 2. Build the knowledge base
-    os.makedirs("documents_enigma", exist_ok=True) # Ensure the documents folder exists
-    all_chunks, embeddings, metadata = process_documents("documents_enigma")
+    os.makedirs(DOCS_DIR, exist_ok=True) # Ensure the documents folder exists
+    all_chunks, embeddings, metadata = process_documents(DOCS_DIR)
 
     if not all_chunks:
         print("No text found. Add .txt files to the documents_enigma folder and re-run.")
@@ -227,26 +268,24 @@ if __name__ == "__main__":
     collection = store_in_chromadb(all_chunks, embeddings, metadata)
     print(f"Stored {collection.count()} chunks in ChromaDB.")
 
-    # 3. Ask for the question
-    query = input("What question would you like answered? ").strip()
-    if not query:
-        print("No question entered. Exiting.")
-        exit()
+    start_session("local-test", TEST_MODE)
+    print(f"Session started in {TEST_MODE} mode.\n")
 
-    # 4. Retrieve, generate, display
-    retrieved_chunks = retrieve_chunks(collection, query)
-    try:
-        #TEMP VALUES REPLACE WITH WEBSITE INPUTS
-        mode = "socratic"  # Change to "full" for direct answers
-        history = []  # Initialize an empty history for the conversation
-        answer = generate_answer(client, query, retrieved_chunks, mode, history)
-    except Exception as e:
-        traceback.print_exc()
-        print(f"Error calling the Groq API: {e}")
-        if getattr(e, "response", None) is not None:
-            print(e.response.text) # type: ignore
-        exit()
+    # 3. Ask for the question
+    while True:
+        query = input("Question: ").strip()
+        if not query:
+            break
+        try:
+            answer = handle_message(client, collection, "local-test", query)
+            print(f"\nAnswer: {answer}")
+        except Exception as e:
+            traceback.print_exc()
+            print(f"Error calling the Groq API: {e}")
+            if getattr(e, "response", None) is not None:
+                print(e.response.text)  # type: ignore
+            continue
     
 
-    print(f"\nAnswer: {answer}")
 
+    
