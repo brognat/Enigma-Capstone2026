@@ -5,9 +5,9 @@ import { RapierPhysics } from 'three/addons/physics/RapierPhysics.js';
 
 class PhysicsEngine {
 
-    constructor(scene) {
-        if (!scene.isScene) {
-            throw new TypeError("The scene parameter must be a Three.Scene.");
+    constructor(scene = null) {
+        if (scene && !scene.isScene) {
+            throw new TypeError("The scene parameter must be a THREE.Scene.");
         }
         this.scene = scene;
         this.physics = null;
@@ -24,7 +24,19 @@ class PhysicsEngine {
         this.RAPIER = this.physics.RAPIER;
 
         // Add scene to the physics world
-        this.physics.addScene(this.scene);
+        if (this.scene) {
+            this.physics.addScene(this.scene);
+        }
+    }
+
+    addScene(scene) {
+        if (!scene || !scene.isScene) {
+            throw new TypeError("The scene parameter must be a THREE.Scene.");
+        }
+        this.scene = scene;
+        if (this.physics) {
+            this.physics.addScene(this.scene);
+        }
     }
 
     /**

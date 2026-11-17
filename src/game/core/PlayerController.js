@@ -2,9 +2,8 @@
 
 class PlayerController {
 
-    constructor(physics, player, offset = 0.01) {
+    constructor(physics, offset = 0.01) {
         this.physics = physics;
-        this.player = player;
         this.offset = offset;
         this.characterController = null;
 

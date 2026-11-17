@@ -2,20 +2,23 @@
 
 class Player {
 
-    constructor(mesh, physics, name) {
+    constructor(mesh, name, physics = null) {
         this.mesh = mesh;
-        this.physics = physics;
         this.name = name;
+        this.physics = null;
         this.body = null;
         this.collider = null;
         this.zone = null;
-        this.inRange = null;
+        // List to track what objects are in range of the user
+        this.inRange = [];
 
-        this.#init();
+        if (physics) {
+            this.enablePhysics(physics);
+        }
     }
 
-
-    #init() {
+    enablePhysics(physics) {
+        this.physics = physics;
         const RAPIER = this.physics.RAPIER;
 
         // Create kinematic body
@@ -38,7 +41,7 @@ class Player {
         );
 
         // Interaction zone collider
-        const pad = .25; // Temporary until full implementation
+        const pad = 0.25; // Temporary until full implementation
         this.zone = this.physics.world.createCollider(
             RAPIER.ColliderDesc
                 .cuboid(halfWidth + pad, halfHeight + pad, halfDepth + pad)
@@ -54,9 +57,6 @@ class Player {
         this.mesh.userData.collider = this.collider;
         this.mesh.userData.zone = this.zone;
         this.zone.userData = { name: this.name };
-
-        // List to track what objects are in range of the user
-        this.inRange = []
     }
 
     /**
@@ -69,16 +69,18 @@ class Player {
         this.mesh.position.z += translation.z;
 
         // Moving the body moves both the solid collider and the zone
-        this.body.setNextKinematicTranslation(this.mesh.position);
+        if (this.body) {
+            this.body.setNextKinematicTranslation(this.mesh.position);
+        }
     }
 
-    addToRange(objectName){
+    addToRange(objectName) {
         this.inRange.push(objectName);
     }
 
-    removeFromRange(objectName){
+    removeFromRange(objectName) {
         const index = this.inRange.indexOf(objectName);
-        if (index == -1){
+        if (index == -1) {
             console.log(objectName + " not in range!")
             return false;
         }
@@ -94,7 +96,7 @@ class Player {
         return this.zone;
     }
 
-    getInRange(){
+    getInRange() {
         return this.inRange;
     }
 
