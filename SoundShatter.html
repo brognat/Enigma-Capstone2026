@@ -193,7 +193,7 @@
       renderer.domElement.setAttribute("role", "img");
       renderer.domElement.setAttribute(
         "aria-label",
-        "3D stone room with an upward-facing central speaker wired to frequency and amplitude displays, and a glass pane at the hallway entrance",
+        "3D stone room with an upward-facing central speaker wired to frequency and amplitude displays with decorative knobs, and a glass pane at the hallway entrance",
       );
 
       const scene = new THREE.Scene();
@@ -418,6 +418,29 @@
         );
         screen.position.set(x, 1.6, BACK_Z + 0.01);
         scene.add(screen);
+
+        const knobX = x + 1.15;
+        const knobPlate = new THREE.Mesh(
+          new THREE.BoxGeometry(0.55, 0.7, 0.08),
+          speakerBodyMaterial,
+        );
+        knobPlate.position.set(knobX, 1.6, BACK_Z + 0.05);
+        scene.add(knobPlate);
+
+        const knob = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.2, 0.2, 0.15, 32),
+          speakerConeMaterial,
+        );
+        knob.rotation.x = Math.PI / 2;
+        knob.position.set(knobX, 1.6, BACK_Z + 0.16);
+        scene.add(knob);
+
+        const indicator = new THREE.Mesh(
+          new THREE.BoxGeometry(0.035, 0.12, 0.01),
+          new THREE.MeshBasicMaterial({ color }),
+        );
+        indicator.position.set(knobX, 1.68, BACK_Z + 0.24);
+        scene.add(indicator);
       }
 
       addWaveDisplay(-6, "FREQUENCY", "440 Hz", "#55e6ff", 70);
