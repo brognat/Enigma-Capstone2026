@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Game - The Enigma Escape Room</title>
+    <link rel="stylesheet" href="../src/css/Style.css" />
+  </head>
+  <body>
+    <main id="game-root" aria-label="Game placeholder">
+      <h1>Game Goes Here</h1>
+    </main>
+    <a class="finish-room button" href="./complete.html">Finish room</a>
+    <button
+      class="robot-face robot-face--full"
+      id="robot-chat-toggle"
+      type="button"
+      aria-label="Open game guide chat"
+      aria-controls="robot-chat"
+      aria-expanded="false"
+      data-ai-mode="full"
+      hidden
+    >
+      <span class="antenna left"></span>
+      <span class="antenna right"></span>
+      <span class="top-piece"></span>
+
+      <span class="ear left"></span>
+      <span class="ear right"></span>
+
+      <span class="head"></span>
+
+      <span class="eye left"><span class="pupil"></span></span>
+      <span class="eye right"><span class="pupil"></span></span>
+
+      <span class="mouth">
+        <span class="tooth"></span>
+        <span class="tooth"></span>
+        <span class="tooth"></span>
+        <span class="tooth"></span>
+        <span class="tooth"></span>
+      </span>
+    </button>
+    <button
+      class="robot-face robot-face--collaborative"
+      id="collaborative-robot-chat-toggle"
+      type="button"
+      aria-label="Open collaborative game guide chat"
+      aria-controls="collaborative-robot-chat"
+      aria-expanded="false"
+      data-ai-mode="collaborative"
+      hidden
+    >
+      <span class="antenna left"></span>
+      <span class="antenna right"></span>
+      <span class="top-piece"></span>
+
+      <span class="ear left"></span>
+      <span class="ear right"></span>
+
+      <span class="head"></span>
+
+      <span class="eye left"><span class="pupil"></span></span>
+      <span class="eye right"><span class="pupil"></span></span>
+
+      <span class="mouth">
+        <span class="tooth"></span>
+        <span class="tooth"></span>
+        <span class="tooth"></span>
+        <span class="tooth"></span>
+        <span class="tooth"></span>
+      </span>
+    </button>
+    <section
+      class="robot-chat"
+      id="robot-chat"
+      data-ai-mode="full"
+      role="dialog"
+      aria-labelledby="robot-chat-title"
+      aria-describedby="robot-chat-message"
+      tabindex="-1"
+      hidden
+    >
+      <header class="robot-chat-header">
+        <h2 id="robot-chat-title">Game Guide</h2>
+        <button
+          class="robot-chat-close"
+          id="robot-chat-close"
+          type="button"
+          aria-label="Close chat"
+        >
+          &times;
+        </button>
+      </header>
+      <p class="robot-chat-message" id="robot-chat-message">
+        Hi! I'm your A.I. game assistant, here to help you escape!
+      </p>
+      <label class="robot-chat-label" for="robot-chat-input">Your message</label>
+      <div class="robot-chat-composer">
+        <textarea
+          id="robot-chat-input"
+          class="robot-chat-input"
+          rows="2"
+          placeholder="Type a message..."
+          aria-describedby="robot-chat-note"
+        ></textarea>
+        <button type="button" disabled>Send</button>
+      </div>
+      <p class="robot-chat-note" id="robot-chat-note">
+        Preview only. Messages are not sent.
+      </p>
+    </section>
+    <section
+      class="robot-chat"
+      id="collaborative-robot-chat"
+      data-ai-mode="collaborative"
+      role="dialog"
+      aria-labelledby="collaborative-robot-chat-title"
+      aria-describedby="collaborative-robot-chat-message"
+      tabindex="-1"
+      hidden
+    >
+      <header class="robot-chat-header">
+        <h2 id="collaborative-robot-chat-title">Collaborative Game Guide</h2>
+        <button class="robot-chat-close" type="button" aria-label="Close chat">
+          &times;
+        </button>
+      </header>
+      <p class="robot-chat-message" id="collaborative-robot-chat-message">
+        Hi! I'm your A.I. collaborator, here to help you and your team escape!
+      </p>
+      <label class="robot-chat-label" for="collaborative-robot-chat-input">
+        Your message
+      </label>
+      <div class="robot-chat-composer">
+        <textarea
+          id="collaborative-robot-chat-input"
+          class="robot-chat-input"
+          rows="2"
+          placeholder="Type a message..."
+          aria-describedby="collaborative-robot-chat-note"
+        ></textarea>
+        <button type="button" disabled>Send</button>
+      </div>
+      <p class="robot-chat-note" id="collaborative-robot-chat-note">
+        Preview only. Messages are not sent.
+      </p>
+    </section>
+    <script type="module" src="../src/website/Assistant.js"></script>
+  </body>
+</html>
