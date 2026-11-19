@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Climate Chamber - The Enigma Escape Room</title>
+    <link rel="stylesheet" href="Style.css" />
+    <link rel="stylesheet" href="Game.css" />
+    <style>
+      #game-root canvas {
+        position: absolute;
+        inset: 0;
+        display: block;
+      }
+
+      #climate-status {
+        position: absolute;
+        z-index: 2;
+        bottom: 20px;
+        left: 50%;
+        margin: 0;
+        padding: 8px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 6px;
+        color: #e8f4ec;
+        background: rgba(15, 25, 23, 0.78);
+        font-size: 0.9rem;
+        text-align: center;
+        transform: translateX(-50%);
+      }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+        }
+      }
+    </script>
+  </head>
+  <body class="game-page">
+    <main id="game-root" aria-label="The Climate Chamber">
+      <header class="room-toolbar">
+        <h1>The Climate Chamber</h1>
+        <nav aria-label="Game controls">
+          <a href="Index.html">Exit</a>
+          <a class="finish-room button" href="Complete.html">Finish room</a>
+        </nav>
+      </header>
+      <p id="climate-status" role="status">
+        The chamber is sealed. Find a stable temperature to escape.
+      </p>
+    </main>
+    <button
+      class="robot-face robot-face--full"
+      id="robot-chat-toggle"
+      type="button"
+      aria-label="Open game guide chat"
+      aria-controls="robot-chat"
+      aria-expanded="false"
+      data-ai-mode="full"
+      hidden
+    >
+      <span class="antenna left"></span><span class="antenna right"></span>
+      <span class="top-piece"></span><span class="ear left"></span>
+      <span class="ear right"></span><span class="head"></span>
+      <span class="eye left"><span class="pupil"></span></span>
+      <span class="eye right"><span class="pupil"></span></span>
+      <span class="mouth"
+        ><span class="tooth"></span><span class="tooth"></span>
+        <span class="tooth"></span><span class="tooth"></span
+        ><span class="tooth"></span>
+      </span>
+    </button>
+    <button
+      class="robot-face robot-face--collaborative"
+      id="collaborative-robot-chat-toggle"
+      type="button"
+      aria-label="Open collaborative game guide chat"
+      aria-controls="collaborative-robot-chat"
+      aria-expanded="false"
+      data-ai-mode="collaborative"
+      hidden
+    >
+      <span class="antenna left"></span><span class="antenna right"></span>
+      <span class="top-piece"></span><span class="ear left"></span>
+      <span class="ear right"></span><span class="head"></span>
+      <span class="eye left"><span class="pupil"></span></span>
+      <span class="eye right"><span class="pupil"></span></span>
+      <span class="mouth"
+        ><span class="tooth"></span><span class="tooth"></span>
+        <span class="tooth"></span><span class="tooth"></span
+        ><span class="tooth"></span>
+      </span>
+    </button>
+    <section
+      class="robot-chat"
+      id="robot-chat"
+      data-ai-mode="full"
+      role="dialog"
+      aria-labelledby="robot-chat-title"
+      aria-describedby="robot-chat-message"
+      tabindex="-1"
+      hidden
+    >
+      <header class="robot-chat-header">
+        <h2 id="robot-chat-title">Game Guide</h2>
+        <button
+          class="robot-chat-close"
+          id="robot-chat-close"
+          type="button"
+          aria-label="Close chat"
+        >
+          &times;
+        </button>
+      </header>
+      <p class="robot-chat-message" id="robot-chat-message">
+        Hi! I'm your A.I. game assistant, here to help you escape!
+      </p>
+      <label class="robot-chat-label" for="robot-chat-input"
+        >Your message</label
+      >
+      <div class="robot-chat-composer">
+        <textarea
+          id="robot-chat-input"
+          class="robot-chat-input"
+          rows="2"
+          placeholder="Type a message..."
+          aria-describedby="robot-chat-note"
+        ></textarea>
+        <button type="button" disabled>Send</button>
+      </div>
+      <p class="robot-chat-note" id="robot-chat-note">
+        Preview only. Messages are not sent.
+      </p>
+    </section>
+    <section
+      class="robot-chat"
+      id="collaborative-robot-chat"
+      data-ai-mode="collaborative"
+      role="dialog"
+      aria-labelledby="collaborative-robot-chat-title"
+      aria-describedby="collaborative-robot-chat-message"
+      tabindex="-1"
+      hidden
+    >
+      <header class="robot-chat-header">
+        <h2 id="collaborative-robot-chat-title">Collaborative Game Guide</h2>
+        <button class="robot-chat-close" type="button" aria-label="Close chat">
+          &times;
+        </button>
+      </header>
+      <p class="robot-chat-message" id="collaborative-robot-chat-message">
+        Hi! I'm your A.I. collaborator, here to help you and your team escape!
+      </p>
+      <label class="robot-chat-label" for="collaborative-robot-chat-input"
+        >Your message</label
+      >
+      <div class="robot-chat-composer">
+        <textarea
+          id="collaborative-robot-chat-input"
+          class="robot-chat-input"
+          rows="2"
+          placeholder="Type a message..."
+          aria-describedby="collaborative-robot-chat-note"
+        ></textarea>
+        <button type="button" disabled>Send</button>
+      </div>
+      <p class="robot-chat-note" id="collaborative-robot-chat-note">
+        Preview only. Messages are not sent.
+      </p>
+    </section>
+    <script src="Assistant.js"></script>
+    <script type="module">
+      import * as THREE from "three";
+
+      const ROOM_W = 26;
+      const ROOM_D = 16;
+      const WALL_H = 6;
+      const BACK_Z = -ROOM_D / 2;
+      const root = document.getElementById("game-root");
+      const renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true,
+      });
+      renderer.setClearColor(0x000000, 0);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setSize(root.clientWidth, root.clientHeight);
+      root.prepend(renderer.domElement);
+      renderer.domElement.setAttribute("role", "img");
+      renderer.domElement.setAttribute(
+        "aria-label",
+        "A stone climate chamber with an open floor, wall-mounted temperature simulator, and a back exit",
+      );
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x17221e);
+      const camera = new THREE.PerspectiveCamera(
+        55,
+        root.clientWidth / root.clientHeight,
+        0.1,
+        200,
+      );
+      camera.position.set(0, 13, ROOM_D / 2 + 9);
+      camera.lookAt(0, 0, -3);
+
+      scene.add(new THREE.HemisphereLight(0xe4f6e8, 0x493c30, 1.15));
+      const sun = new THREE.DirectionalLight(0xfff0cf, 2.2);
+      sun.position.set(-7, 15, 8);
+      scene.add(sun);
+      const warmLight = new THREE.PointLight(0xff9a52, 48, 13);
+      warmLight.position.set(-2.2, 3.4, -1.5);
+      scene.add(warmLight);
+      const coolLight = new THREE.PointLight(0x6fdcff, 42, 13);
+      coolLight.position.set(2.2, 3.4, -1.5);
+      scene.add(coolLight);
+      const simulatorLight = new THREE.PointLight(0x9cff73, 24, 10);
+      simulatorLight.position.set(0, 4.5, BACK_Z + 0.8);
+      scene.add(simulatorLight);
+
+      const stoneSurfaces = [];
+      function stoneMaterial(width, height, type) {
+        const material = new THREE.MeshStandardMaterial({
+          color: 0x555555,
+          roughness: 0.9,
+          side: THREE.DoubleSide,
+        });
+        stoneSurfaces.push({ material, width, height, type });
+        return material;
+      }
+
+      function plane(
+        width,
+        height,
+        position,
+        rotY = 0,
+        rotX = 0,
+        type = "wall",
+      ) {
+        const mesh = new THREE.Mesh(
+          new THREE.PlaneGeometry(width, height),
+          stoneMaterial(width, height, type),
+        );
+        mesh.position.copy(position);
+        mesh.rotation.set(rotX, rotY, 0);
+        scene.add(mesh);
+        return mesh;
+      }
+
+      const v = (x, y, z) => new THREE.Vector3(x, y, z);
+      const boxMaterial = (color, options = {}) =>
+        new THREE.MeshStandardMaterial({ color, roughness: 0.68, ...options });
+      function box(width, height, depth, position, material) {
+        const mesh = new THREE.Mesh(
+          new THREE.BoxGeometry(width, height, depth),
+          material,
+        );
+        mesh.position.copy(position);
+        scene.add(mesh);
+        return mesh;
+      }
+
+      // The open front and raised camera keep the greenhouse layout in view.
+      plane(ROOM_W, ROOM_D, v(0, 0, 0), 0, -Math.PI / 2, "floor");
+      plane(ROOM_D, WALL_H, v(-ROOM_W / 2, WALL_H / 2, 0), Math.PI / 2);
+      plane(ROOM_D, WALL_H, v(ROOM_W / 2, WALL_H / 2, 0), -Math.PI / 2);
+      const exitWidth = 3.5;
+      const sideWidth = (ROOM_W - exitWidth) / 2;
+      plane(
+        sideWidth,
+        WALL_H,
+        v(-(exitWidth + sideWidth) / 2, WALL_H / 2, BACK_Z),
+      );
+      plane(
+        sideWidth,
+        WALL_H,
+        v((exitWidth + sideWidth) / 2, WALL_H / 2, BACK_Z),
+      );
+      plane(exitWidth, WALL_H - 4.2, v(0, 4.2 + (WALL_H - 4.2) / 2, BACK_Z));
+
+      function labelTexture(title, detail, color) {
+        const canvas = document.createElement("canvas");
+        canvas.width = 512;
+        canvas.height = 192;
+        const context = canvas.getContext("2d");
+        if (!context)
+          throw new Error("Unable to create a climate chamber label.");
+        context.fillStyle = "#182321";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.fillStyle = color;
+        context.fillRect(0, 0, 12, canvas.height);
+        context.fillStyle = "#f4f4e9";
+        context.font = "bold 30px sans-serif";
+        context.fillText(title, 34, 72);
+        context.font = "24px sans-serif";
+        context.fillStyle = "#c5d5cd";
+        context.fillText(detail, 34, 132);
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        return new THREE.MeshBasicMaterial({ map: texture });
+      }
+
+      const simulator = new THREE.Mesh(
+        new THREE.PlaneGeometry(3.2, 1.5),
+        labelTexture("CLIMATE CONTROL", "22.0 C  |  STABLE", "#9cff73"),
+      );
+      simulator.position.set(0, 4.15, BACK_Z + 0.035);
+      scene.add(simulator);
+      const simulatorCase = boxMaterial(0x263638, {
+        metalness: 0.5,
+        roughness: 0.35,
+      });
+      box(3.55, 1.78, 0.22, v(0, 4.15, BACK_Z + 0.18), simulatorCase);
+      simulator.position.z = BACK_Z + 0.065;
+      for (const x of [-2.4, 2.4]) {
+        const dial = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.28, 0.28, 0.12, 32),
+          boxMaterial(x < 0 ? 0xf49b53 : 0x64d8f0, { metalness: 0.45 }),
+        );
+        dial.rotation.x = Math.PI / 2;
+        dial.position.set(x, 4.15, BACK_Z + 0.12);
+        scene.add(dial);
+      }
+      const ventMaterial = boxMaterial(0x71817d, {
+        metalness: 0.55,
+        roughness: 0.42,
+      });
+      for (let i = 0; i < 7; i++) {
+        box(
+          0.12,
+          0.62,
+          0.08,
+          v(-0.45 + i * 0.15, 5.35, BACK_Z + 0.08),
+          ventMaterial,
+        );
+      }
+
+      const wood = boxMaterial(0x654229, { roughness: 0.85 });
+      const doorFrame = boxMaterial(0x34251a, { roughness: 0.9 });
+      box(exitWidth + 0.2, 4.25, 0.16, v(0, 2.1, BACK_Z + 0.18), doorFrame);
+      for (let i = 0; i < 7; i++) {
+        box(0.43, 4.08, 0.12, v(-1.3 + i * 0.43, 2.05, BACK_Z + 0.28), wood);
+      }
+      const handle = new THREE.Mesh(
+        new THREE.SphereGeometry(0.1, 16, 12),
+        boxMaterial(0xc58b36, { metalness: 0.65, roughness: 0.35 }),
+      );
+      handle.position.set(1, 2, BACK_Z + 0.4);
+      scene.add(handle);
+
+      function applyStoneTexture(baseTexture, surfaceType) {
+        baseTexture.colorSpace = THREE.SRGBColorSpace;
+        for (const { material, width, height, type } of stoneSurfaces) {
+          if (type !== surfaceType) continue;
+          const texture = baseTexture.clone();
+          texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+          const tileHeight =
+            (2.5 * baseTexture.image.height) / baseTexture.image.width;
+          texture.repeat.set(width / 2.5, height / tileHeight);
+          material.map = texture;
+          material.color.set(0xffffff);
+          material.needsUpdate = true;
+        }
+      }
+
+      const textureLoader = new THREE.TextureLoader();
+      Promise.all([
+        textureLoader.loadAsync("Stonewall.png"),
+        textureLoader.loadAsync("Stonewalls2.jpg"),
+      ])
+        .then(([floorTexture, wallTexture]) => {
+          applyStoneTexture(floorTexture, "floor");
+          applyStoneTexture(wallTexture, "wall");
+        })
+        .catch((error) => {
+          console.error(
+            "Unable to load the Climate Chamber stone textures:",
+            error,
+          );
+          document.getElementById("climate-status").textContent =
+            "The chamber loaded without its stone textures. Check Stonewall.png and Stonewalls2.jpg.";
+        });
+
+      function animate(time) {
+        warmLight.intensity = 45 + 4 * Math.sin(time * 0.0014);
+        coolLight.intensity = 39 + 4 * Math.sin(time * 0.0011 + Math.PI);
+        simulatorLight.intensity = 22 + 2 * Math.sin(time * 0.0018);
+        renderer.render(scene, camera);
+        requestAnimationFrame(animate);
+      }
+      requestAnimationFrame(animate);
+
+      window.addEventListener("resize", () => {
+        camera.aspect = root.clientWidth / root.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(root.clientWidth, root.clientHeight);
+      });
+    </script>
+  </body>
+</html>

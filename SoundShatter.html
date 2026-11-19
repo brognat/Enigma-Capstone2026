@@ -332,10 +332,16 @@
       scene.add(speakerRim);
 
       function addSpeakerWire(points, color) {
-        const path = new THREE.CatmullRomCurve3(points.map(([x, y, z]) => v(x, y, z)));
+        const path = new THREE.CatmullRomCurve3(
+          points.map(([x, y, z]) => v(x, y, z)),
+        );
         const wire = new THREE.Mesh(
           new THREE.TubeGeometry(path, 72, 0.025, 8, false),
-          new THREE.MeshStandardMaterial({ color, metalness: 0.2, roughness: 0.55 }),
+          new THREE.MeshStandardMaterial({
+            color,
+            metalness: 0.2,
+            roughness: 0.55,
+          }),
         );
         scene.add(wire);
       }
@@ -379,7 +385,10 @@
         context.font = "bold 34px monospace";
         context.fillText(reading, 32, 112);
 
-        const left = 32, right = 480, top = 155, bottom = 468;
+        const left = 32,
+          right = 480,
+          top = 155,
+          bottom = 468;
         context.strokeStyle = "rgba(110, 180, 210, 0.2)";
         context.lineWidth = 1;
         for (let gridX = left; gridX <= right; gridX += 56) {
@@ -399,7 +408,8 @@
         for (let i = 0; i <= 160; i++) {
           const progress = i / 160;
           const px = left + progress * (right - left);
-          const py = (top + bottom) / 2 - Math.sin(progress * Math.PI * 8) * amplitude;
+          const py =
+            (top + bottom) / 2 - Math.sin(progress * Math.PI * 8) * amplitude;
           if (i === 0) context.moveTo(px, py);
           else context.lineTo(px, py);
         }
@@ -452,7 +462,8 @@
           if (type !== surfaceType) continue;
           const tex = baseTex.clone();
           tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-          const tileHeight = TILE_W * baseTex.image.height / baseTex.image.width;
+          const tileHeight =
+            (TILE_W * baseTex.image.height) / baseTex.image.width;
           tex.repeat.set(width / TILE_W, height / tileHeight);
           material.map = tex;
           material.color.set(0xffffff);
@@ -470,7 +481,10 @@
           applyStoneTexture(stonewalls2, "wall");
         })
         .catch((error) => {
-          console.error("Unable to load the Sound Shatter stone textures:", error);
+          console.error(
+            "Unable to load the Sound Shatter stone textures:",
+            error,
+          );
         });
 
       function animate(time) {
