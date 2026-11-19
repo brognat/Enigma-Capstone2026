@@ -29,7 +29,7 @@
         </nav>
       </header>
       <p id="hud">
-        Three paths lead out of the maze. Choose wisely.<br />
+        Four paths lead out of the maze. Choose wisely.<br />
         Red: W A S D &nbsp;|&nbsp; Blue: Arrow keys
       </p>
     </main>
@@ -176,7 +176,7 @@
       const INNER_H = 2.5; // maze walls are lower than the outer walls so the camera can see the paths
       const HALL_W = 4, HALL_H = 4, HALL_LEN = 8;
       const CELL = 2; // world size of one maze grid cell
-      const TILE_W = 2.5, TILE_H = 1.5; // world size of one Stonewall.png tile (image aspect)
+      const TILE_W = 2.5; // world width of one stone texture tile
       const BACK_Z = -ROOM_D / 2;
 
       const root = document.getElementById("game-root");
@@ -187,7 +187,7 @@
       renderer.shadowMap.enabled = true;
       root.prepend(renderer.domElement);
       renderer.domElement.tabIndex = 0;
-      renderer.domElement.setAttribute("aria-label", "3D stone maze room with three exits");
+      renderer.domElement.setAttribute("aria-label", "3D stone maze room with four exits");
       renderer.domElement.addEventListener("pointerdown", () => renderer.domElement.focus());
 
       const scene = new THREE.Scene();
@@ -206,28 +206,40 @@
       sun.shadow.bias = -0.0005;
       scene.add(sun);
 
-      // Each surface gets its own texture clone so the tile repeats its size.
+      // Keep track of each stone surface so floors and walls can use different textures.
       const stoneSurfaces = [];
-      new THREE.TextureLoader().load("Stonewall.png", (baseTex) => {
+      function applyStoneTexture(baseTex, surfaceType) {
         baseTex.colorSpace = THREE.SRGBColorSpace;
-        for (const { material, width, height } of stoneSurfaces) {
+        stoneSurfaces.forEach(({ material, width, height, type }) => {
+          if (type !== surfaceType) return;
           const tex = baseTex.clone();
           tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-          tex.repeat.set(width / TILE_W, height / TILE_H);
+          const tileHeight = TILE_W * baseTex.image.height / baseTex.image.width;
+          tex.repeat.set(width / TILE_W, height / tileHeight);
           material.map = tex;
           material.color.set(0xffffff);
           material.needsUpdate = true;
-        }
-      });
-
-      function stoneMaterial(width, height) {
-        const material = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.9, side: THREE.DoubleSide });
-        stoneSurfaces.push({ material, width, height });
-        return material;
+        });
       }
 
-      // Plain gray for the maze walls so they stand out against the floor and walls.
-      const mazeMaterial = new THREE.MeshStandardMaterial({ color: 0x9a9a9a, roughness: 0.8, side: THREE.DoubleSide });
+      const stoneLoader = new THREE.TextureLoader();
+      Promise.all([
+        stoneLoader.loadAsync("Stonewall.png"),
+        stoneLoader.loadAsync("Stonewalls2.jpg"),
+      ])
+        .then(([stonewall, stonewalls2]) => {
+          applyStoneTexture(stonewall, "floor");
+          applyStoneTexture(stonewalls2, "wall");
+        })
+        .catch((error) => {
+          console.error("Unable to load the maze room stone textures.", error);
+        });
+
+      function stoneMaterial(width, height, type = "wall") {
+        const material = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.9, side: THREE.DoubleSide });
+        stoneSurfaces.push({ material, width, height, type });
+        return material;
+      }
 
       function plane(w, h, pos, rotY = 0, rotX = 0, castShadow = false, material = stoneMaterial(w, h)) {
         const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), material);
@@ -240,32 +252,64 @@
       const v = (x, y, z) => new THREE.Vector3(x, y, z);
 
       // Room floor and side walls (front wall omitted so the camera can see in).
-      plane(ROOM_W, ROOM_D, v(0, 0, 0), 0, -Math.PI / 2);
+      plane(ROOM_W, ROOM_D, v(0, 0, 0), 0, -Math.PI / 2, false, stoneMaterial(ROOM_W, ROOM_D, "floor"));
       plane(ROOM_D, WALL_H, v(-ROOM_W / 2, WALL_H / 2, 0), Math.PI / 2);
       plane(ROOM_D, WALL_H, v(ROOM_W / 2, WALL_H / 2, 0), -Math.PI / 2);
 
-      // Three exits in the back wall: left, center and right, each hallway get its own light color.
+      // Four exits in the back wall; each hallway gets its own light color.
+      const gapW = (ROOM_W - 4 * HALL_W) / 5;
       const exits = [
-        { x: -ROOM_W / 2 + HALL_W / 2, color: 0xff8855 },
-        { x: 0, color: 0xffcc88 },
-        { x: ROOM_W / 2 - HALL_W / 2, color: 0x66aaff },
+        { x: -ROOM_W / 2 + gapW + HALL_W / 2, color: 0xff3344 },
+        { x: -ROOM_W / 2 + gapW * 2 + HALL_W * 1.5, color: 0xffc928 },
+        { x: -ROOM_W / 2 + gapW * 3 + HALL_W * 2.5, color: 0x20d8ff },
+        { x: -ROOM_W / 2 + gapW * 4 + HALL_W * 3.5, color: 0xc13cff },
       ];
 
-      // Back wall sections between the exits, plus the lintel above each opening.
-      const gapW = (ROOM_W - exits.length * HALL_W) / (exits.length - 1);
-      for (let i = 0; i < exits.length - 1; i++) {
-        const gapX = exits[i].x + HALL_W / 2 + gapW / 2;
+      // Back wall sections between the exits and along both sides, plus the lintel above each opening.
+      for (let i = 0; i <= exits.length; i++) {
+        const gapX = -ROOM_W / 2 + gapW / 2 + i * (HALL_W + gapW);
         plane(gapW, WALL_H, v(gapX, WALL_H / 2, BACK_Z));
+      }
+
+      const doorWidth = 3;
+      const doorHeight = HALL_H;
+      const wood = new THREE.MeshStandardMaterial({ color: 0x654229, roughness: 0.85 });
+      const frame = new THREE.MeshStandardMaterial({ color: 0x34251a, roughness: 0.9 });
+      const brass = new THREE.MeshStandardMaterial({ color: 0xc58b36, metalness: 0.65, roughness: 0.35 });
+
+      function doorPiece(width, height, depth, x, y, z, material) {
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), material);
+        mesh.position.set(x, y, z);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        scene.add(mesh);
+      }
+
+      function addHallDoor(x, z) {
+        doorPiece(doorWidth, doorHeight, 0.16, x, doorHeight / 2, z, frame);
+        for (let i = 0; i < 6; i++) {
+          doorPiece(0.48, doorHeight - 0.12, 0.12, x - 1.25 + i * 0.5, doorHeight / 2, z + 0.1, wood);
+        }
+        doorPiece(0.2, doorHeight, 0.3, x - doorWidth / 2, doorHeight / 2, z + 0.1, frame);
+        doorPiece(0.2, doorHeight, 0.3, x + doorWidth / 2, doorHeight / 2, z + 0.1, frame);
+        doorPiece(doorWidth + 0.2, 0.2, 0.3, x, doorHeight - 0.1, z + 0.1, frame);
+        const handle = new THREE.Mesh(new THREE.SphereGeometry(0.1, 16, 8), brass);
+        handle.position.set(x + 1, 1.8, z + 0.25);
+        handle.castShadow = true;
+        handle.receiveShadow = true;
+        scene.add(handle);
       }
 
       // Hallways: floor, side walls, back wall
       const hallMidZ = BACK_Z - HALL_LEN / 2;
       for (const { x, color } of exits) {
         plane(HALL_W, WALL_H - HALL_H, v(x, HALL_H + (WALL_H - HALL_H) / 2, BACK_Z));
-        plane(HALL_W, HALL_LEN, v(x, 0, hallMidZ), 0, -Math.PI / 2);
+        plane(HALL_W, HALL_LEN, v(x, 0, hallMidZ), 0, -Math.PI / 2, false, stoneMaterial(HALL_W, HALL_LEN, "floor"));
         plane(HALL_LEN, HALL_H, v(x - HALL_W / 2, HALL_H / 2, hallMidZ), Math.PI / 2);
         plane(HALL_LEN, HALL_H, v(x + HALL_W / 2, HALL_H / 2, hallMidZ), -Math.PI / 2);
-        plane(HALL_W, HALL_H, v(x, HALL_H / 2, BACK_Z - HALL_LEN));
+        const hallBackZ = BACK_Z - HALL_LEN;
+        plane(HALL_W, HALL_H, v(x, HALL_H / 2, hallBackZ));
+        addHallDoor(x, hallBackZ);
 
         const hallLight = new THREE.PointLight(color, 30, 20);
         hallLight.position.set(x, 3, BACK_Z - HALL_LEN + 2);
@@ -281,7 +325,7 @@
         const x1 = gridX(gx1), z1 = gridZ(gz1), x2 = gridX(gx2), z2 = gridZ(gz2);
         const alongX = z1 === z2;
         const len = alongX ? Math.abs(x2 - x1) : Math.abs(z2 - z1);
-        plane(len, INNER_H, v((x1 + x2) / 2, INNER_H / 2, (z1 + z2) / 2), alongX ? 0 : Math.PI / 2, 0, true, mazeMaterial);
+        plane(len, INNER_H, v((x1 + x2) / 2, INNER_H / 2, (z1 + z2) / 2), alongX ? 0 : Math.PI / 2, 0, true, stoneMaterial(len, INNER_H));
       }
 
       // Walls running left-to-right

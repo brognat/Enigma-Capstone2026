@@ -11,39 +11,6 @@
         position: absolute;
         inset: 0;
         display: block;
-        outline: none;
-      }
-      #hud {
-        position: absolute;
-        z-index: 2;
-        bottom: 16px;
-        left: 50%;
-        transform: translateX(-50%);
-        margin: 0;
-        color: var(--color-text);
-        font-size: 0.85rem;
-        background: rgba(0, 0, 0, 0.5);
-        padding: 6px 10px;
-        border-radius: 4px;
-        pointer-events: none;
-      }
-      #terminal-status {
-        position: absolute;
-        z-index: 2;
-        bottom: 60px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: max-content;
-        max-width: calc(100% - 32px);
-        padding: 6px 10px;
-        color: var(--color-text);
-        font-size: 0.85rem;
-        background: rgba(0, 0, 0, 0.7);
-        border-radius: 4px;
-        pointer-events: none;
-      }
-      #terminal-status p {
-        margin: 4px 0;
       }
     </style>
     <script type="importmap">
@@ -63,18 +30,6 @@
           <a class="finish-room button" href="Complete.html">Finish room</a>
         </nav>
       </header>
-      <p id="hud">
-        Red: W A S D + Q to interact &nbsp;|&nbsp; Blue: Arrow keys + M to
-        interact
-      </p>
-      <div id="terminal-status">
-        <p id="red-terminal-status" role="status">
-          Red: approach the left terminal to use Q.
-        </p>
-        <p id="blue-terminal-status" role="status">
-          Blue: approach the right terminal to use M.
-        </p>
-      </div>
     </main>
     <button
       class="robot-face robot-face--full"
@@ -223,14 +178,7 @@
       const HALL_W = 4,
         HALL_H = 4,
         HALL_LEN = 14;
-      const TILE_W = 2.5,
-        TILE_H = 1.5; // world size of one Stonewall.png tile (matches image aspect)
-      const BALL_R = 0.5,
-        SPEED = 6;
-      const TERMINAL_W = 1.6,
-        TERMINAL_H = 2.2,
-        TERMINAL_D = 1.2;
-      const INTERACT_RANGE = 1.5;
+      const TILE_W = 2.5; // world width of one stone texture tile
       const BACK_Z = -ROOM_D / 2;
 
       const root = document.getElementById("game-root");
@@ -241,16 +189,11 @@
       renderer.setClearColor(0x000000, 0);
       renderer.setPixelRatio(window.devicePixelRatio);
       renderer.setSize(root.clientWidth, root.clientHeight);
-      renderer.shadowMap.enabled = true;
       root.prepend(renderer.domElement);
-      // Make the scene focusable so clicking it takes focus back from the chat box.
-      renderer.domElement.tabIndex = 0;
+      renderer.domElement.setAttribute("role", "img");
       renderer.domElement.setAttribute(
         "aria-label",
-        "3D stone room with two player spheres and two metal terminals",
-      );
-      renderer.domElement.addEventListener("pointerdown", () =>
-        renderer.domElement.focus(),
+        "3D stone room with an upward-facing central speaker wired to frequency and amplitude displays, and a glass pane at the hallway entrance",
       );
 
       const scene = new THREE.Scene();
@@ -268,57 +211,40 @@
       scene.add(new THREE.AmbientLight(0xffffff, 0.45));
       const sun = new THREE.DirectionalLight(0xffffff, 1.2);
       sun.position.set(6, 14, 10);
-      sun.castShadow = true;
-      Object.assign(sun.shadow.camera, {
-        left: -15,
-        right: 15,
-        top: 15,
-        bottom: -25,
-      });
-      sun.shadow.mapSize.set(2048, 2048);
       scene.add(sun);
+      for (const x of [-2.75, 2.75]) {
+        const roomLight = new THREE.PointLight(0xffdfb5, 32, 9);
+        roomLight.position.set(x, 3.6, 0);
+        scene.add(roomLight);
+      }
       const hallLight = new THREE.PointLight(0xffcc88, 30, 20);
       hallLight.position.set(0, 3, BACK_Z - HALL_LEN + 2);
       scene.add(hallLight);
 
-      // Each surface gets its own texture clone (created once the image loads) so the tile repeat matches its size.
       const stoneSurfaces = [];
-      new THREE.TextureLoader().load("Stonewall.png", (baseTex) => {
-        baseTex.colorSpace = THREE.SRGBColorSpace;
-        for (const { material, width, height } of stoneSurfaces) {
-          const tex = baseTex.clone();
-          tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-          tex.repeat.set(width / TILE_W, height / TILE_H);
-          material.map = tex;
-          material.color.set(0xffffff);
-          material.needsUpdate = true;
-        }
-      });
-
-      function stoneMaterial(width, height) {
+      function stoneMaterial(width, height, type = "wall") {
         const material = new THREE.MeshStandardMaterial({
           color: 0x555555,
           roughness: 0.9,
           side: THREE.DoubleSide,
         });
-        stoneSurfaces.push({ material, width, height });
+        stoneSurfaces.push({ material, width, height, type });
         return material;
       }
 
-      function plane(w, h, pos, rotY = 0, rotX = 0) {
+      function plane(w, h, pos, rotY = 0, rotX = 0, type = "wall") {
         const mesh = new THREE.Mesh(
           new THREE.PlaneGeometry(w, h),
-          stoneMaterial(w, h),
+          stoneMaterial(w, h, type),
         );
         mesh.position.copy(pos);
         mesh.rotation.set(rotX, rotY, 0);
-        mesh.receiveShadow = true;
         scene.add(mesh);
       }
       const v = (x, y, z) => new THREE.Vector3(x, y, z);
 
       // Room floor and walls (front wall omitted so the camera can see in).
-      plane(ROOM_W, ROOM_D, v(0, 0, 0), 0, -Math.PI / 2);
+      plane(ROOM_W, ROOM_D, v(0, 0, 0), 0, -Math.PI / 2, "floor");
       plane(ROOM_D, WALL_H, v(-ROOM_W / 2, WALL_H / 2, 0), Math.PI / 2);
       plane(ROOM_D, WALL_H, v(ROOM_W / 2, WALL_H / 2, 0), -Math.PI / 2);
 
@@ -332,9 +258,9 @@
         v(0, HALL_H + (WALL_H - HALL_H) / 2, BACK_Z),
       );
 
-      // Hallway: floor, side walls, end wall (no ceiling so players stay visible from the camera).
+      // The hallway has no ceiling so the camera can see inside.
       const hallMidZ = BACK_Z - HALL_LEN / 2;
-      plane(HALL_W, HALL_LEN, v(0, 0, hallMidZ), 0, -Math.PI / 2);
+      plane(HALL_W, HALL_LEN, v(0, 0, hallMidZ), 0, -Math.PI / 2, "floor");
       plane(
         HALL_LEN,
         HALL_H,
@@ -349,178 +275,196 @@
       );
       plane(HALL_W, HALL_H, v(0, HALL_H / 2, BACK_Z - HALL_LEN));
 
-      function makeTerminal(x) {
-        const terminal = new THREE.Group();
-        const box = new THREE.Mesh(
-          new THREE.BoxGeometry(TERMINAL_W, TERMINAL_H, TERMINAL_D),
-          new THREE.MeshStandardMaterial({
-            color: 0x888c90,
-            metalness: 0.7,
-            roughness: 0.4,
-          }),
+      const glassMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0xa8eaff,
+        transparent: true,
+        opacity: 0.24,
+        roughness: 0.08,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      });
+      const glassPane = new THREE.Mesh(
+        new THREE.PlaneGeometry(HALL_W, HALL_H),
+        glassMaterial,
+      );
+      glassPane.position.set(0, HALL_H / 2, BACK_Z - 0.12);
+      scene.add(glassPane);
+
+      const speakerBodyMaterial = new THREE.MeshStandardMaterial({
+        color: 0x252a30,
+        metalness: 0.55,
+        roughness: 0.4,
+      });
+      const speakerConeMaterial = new THREE.MeshStandardMaterial({
+        color: 0x68717a,
+        metalness: 0.25,
+        roughness: 0.65,
+        side: THREE.DoubleSide,
+      });
+      const speakerBody = new THREE.Mesh(
+        new THREE.BoxGeometry(1.8, 0.3, 1.8),
+        speakerBodyMaterial,
+      );
+      speakerBody.position.set(0, 0.15, 0);
+      scene.add(speakerBody);
+
+      const speakerCone = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.16, 0.68, 0.2, 48, 1, true),
+        speakerConeMaterial,
+      );
+      speakerCone.position.set(0, 0.39, 0);
+      scene.add(speakerCone);
+
+      const speakerCap = new THREE.Mesh(
+        new THREE.SphereGeometry(0.17, 24, 12),
+        speakerBodyMaterial,
+      );
+      speakerCap.scale.y = 0.45;
+      speakerCap.position.set(0, 0.49, 0);
+      scene.add(speakerCap);
+
+      const speakerRim = new THREE.Mesh(
+        new THREE.TorusGeometry(0.7, 0.045, 12, 48),
+        speakerBodyMaterial,
+      );
+      speakerRim.rotation.x = Math.PI / 2;
+      speakerRim.position.set(0, 0.3, 0);
+      scene.add(speakerRim);
+
+      function addSpeakerWire(points, color) {
+        const path = new THREE.CatmullRomCurve3(points.map(([x, y, z]) => v(x, y, z)));
+        const wire = new THREE.Mesh(
+          new THREE.TubeGeometry(path, 72, 0.025, 8, false),
+          new THREE.MeshStandardMaterial({ color, metalness: 0.2, roughness: 0.55 }),
         );
-        box.position.y = TERMINAL_H / 2;
-        box.castShadow = true;
-        box.receiveShadow = true;
-        terminal.add(box);
+        scene.add(wire);
+      }
+
+      addSpeakerWire(
+        [
+          [-0.38, 0.24, -0.08],
+          [-0.65, 0.07, -0.8],
+          [-2.4, 0.06, -2.3],
+          [-4.3, 0.06, -4.5],
+          [-5.8, 0.06, -6.7],
+          [-6, 0.06, -7.35],
+          [-6, 0.82, BACK_Z + 0.08],
+        ],
+        0x55e6ff,
+      );
+      addSpeakerWire(
+        [
+          [0.38, 0.24, -0.08],
+          [0.65, 0.07, -0.8],
+          [2.4, 0.06, -2.3],
+          [4.3, 0.06, -4.5],
+          [5.8, 0.06, -6.7],
+          [6, 0.06, -7.35],
+          [6, 0.82, BACK_Z + 0.08],
+        ],
+        0xffc66d,
+      );
+
+      function addWaveDisplay(x, title, reading, color, amplitude) {
+        const canvas = document.createElement("canvas");
+        canvas.width = canvas.height = 512;
+        const context = canvas.getContext("2d");
+        if (!context) throw new Error("Unable to create a waveform display.");
+
+        context.fillStyle = "#06101a";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.fillStyle = color;
+        context.font = "bold 25px monospace";
+        context.fillText(title, 32, 54);
+        context.font = "bold 34px monospace";
+        context.fillText(reading, 32, 112);
+
+        const left = 32, right = 480, top = 155, bottom = 468;
+        context.strokeStyle = "rgba(110, 180, 210, 0.2)";
+        context.lineWidth = 1;
+        for (let gridX = left; gridX <= right; gridX += 56) {
+          context.beginPath();
+          context.moveTo(gridX, top);
+          context.lineTo(gridX, bottom);
+          context.stroke();
+        }
+        for (let gridY = top; gridY <= bottom; gridY += 52) {
+          context.beginPath();
+          context.moveTo(left, gridY);
+          context.lineTo(right, gridY);
+          context.stroke();
+        }
+
+        context.beginPath();
+        for (let i = 0; i <= 160; i++) {
+          const progress = i / 160;
+          const px = left + progress * (right - left);
+          const py = (top + bottom) / 2 - Math.sin(progress * Math.PI * 8) * amplitude;
+          if (i === 0) context.moveTo(px, py);
+          else context.lineTo(px, py);
+        }
+        context.strokeStyle = color;
+        context.lineWidth = 5;
+        context.shadowColor = color;
+        context.shadowBlur = 12;
+        context.stroke();
+        context.shadowBlur = 0;
+
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.colorSpace = THREE.SRGBColorSpace;
         const screen = new THREE.Mesh(
-          new THREE.PlaneGeometry(0.95, 0.95),
-          new THREE.MeshBasicMaterial({ color: 0x000000 }),
+          new THREE.PlaneGeometry(1.6, 1.6),
+          new THREE.MeshBasicMaterial({ map: texture, toneMapped: false }),
         );
-        screen.position.set(0, 1.45, TERMINAL_D / 2 + 0.01);
-        terminal.add(screen);
-        terminal.position.set(x, 0, -4);
-        scene.add(terminal);
-        return terminal;
-      }
-      const terminals = [makeTerminal(-6), makeTerminal(6)];
-
-      function terminalDistance(x, z, terminal) {
-        const dx = Math.max(
-          Math.abs(x - terminal.position.x) - TERMINAL_W / 2,
-          0,
-        );
-        const dz = Math.max(
-          Math.abs(z - terminal.position.z) - TERMINAL_D / 2,
-          0,
-        );
-        return Math.hypot(dx, dz);
+        screen.position.set(x, 1.6, BACK_Z + 0.01);
+        scene.add(screen);
       }
 
-      function makeBall(color, x) {
-        const ball = new THREE.Mesh(
-          new THREE.SphereGeometry(BALL_R, 32, 16),
-          new THREE.MeshStandardMaterial({
-            color,
-            roughness: 0.3,
-            metalness: 0.2,
-          }),
-        );
-        ball.position.set(x, BALL_R, 4);
-        ball.castShadow = true;
-        scene.add(ball);
-        return ball;
-      }
-      const players = [
-        {
-          mesh: makeBall(0xff4444, -2),
-          keys: { up: "KeyW", down: "KeyS", left: "KeyA", right: "KeyD" },
-          interact: "KeyQ",
-          label: "Red",
-          side: "left",
-          terminal: terminals[0],
-          status: document.getElementById("red-terminal-status"),
-          interacted: false,
-        },
-        {
-          mesh: makeBall(0x4488ff, 2),
-          keys: {
-            up: "ArrowUp",
-            down: "ArrowDown",
-            left: "ArrowLeft",
-            right: "ArrowRight",
-          },
-          interact: "KeyM",
-          label: "Blue",
-          side: "right",
-          terminal: terminals[1],
-          status: document.getElementById("blue-terminal-status"),
-          interacted: false,
-        },
-      ];
+      addWaveDisplay(-6, "FREQUENCY", "440 Hz", "#55e6ff", 70);
+      addWaveDisplay(6, "AMPLITUDE", "70%", "#ffc66d", 125);
 
-      function nearTerminal(player) {
-        const pos = player.mesh.position;
-        return (
-          terminalDistance(pos.x, pos.z, player.terminal) <= INTERACT_RANGE
-        );
-      }
-
-      function updateTerminalStatus(player) {
-        const nearby = nearTerminal(player);
-        if (!nearby) player.interacted = false;
-        const key = player.interact.slice(3);
-        const message = player.interacted
-          ? `${player.label}: interacted with the ${player.side} terminal.`
-          : nearby
-            ? `${player.label}: press ${key} to interact with the ${player.side} terminal.`
-            : `${player.label}: approach the ${player.side} terminal to use ${key}.`;
-        if (player.status.textContent !== message)
-          player.status.textContent = message;
-      }
-
-      // Walkable area = room box OR hallway box, inset by the ball radius.
-      function walkable(x, z) {
-        if (
-          terminals.some(
-            (terminal) => terminalDistance(x, z, terminal) < BALL_R,
-          )
-        )
-          return false;
-        if (z > ROOM_D / 2 - BALL_R) return false;
-        const inRoom =
-          Math.abs(x) <= ROOM_W / 2 - BALL_R && z >= BACK_Z + BALL_R;
-        const inHall =
-          Math.abs(x) <= HALL_W / 2 - BALL_R && z >= BACK_Z - HALL_LEN + BALL_R;
-        return inRoom || inHall;
-      }
-
-      const isTyping = (e) =>
-        e.target.closest &&
-        e.target.closest("input, textarea, [contenteditable]");
-      const pressed = new Set();
-      window.addEventListener("keydown", (e) => {
-        if (isTyping(e)) return;
-        if (e.code.startsWith("Arrow")) e.preventDefault();
-        pressed.add(e.code);
-        if (!e.repeat) {
-          for (const player of players) {
-            if (e.code === player.interact && nearTerminal(player)) {
-              player.interacted = true;
-              updateTerminalStatus(player);
-            }
-          }
+      function applyStoneTexture(baseTex, surfaceType) {
+        baseTex.colorSpace = THREE.SRGBColorSpace;
+        for (const { material, width, height, type } of stoneSurfaces) {
+          if (type !== surfaceType) continue;
+          const tex = baseTex.clone();
+          tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+          const tileHeight = TILE_W * baseTex.image.height / baseTex.image.width;
+          tex.repeat.set(width / TILE_W, height / tileHeight);
+          material.map = tex;
+          material.color.set(0xffffff);
+          material.needsUpdate = true;
         }
-      });
-      window.addEventListener("keyup", (e) => pressed.delete(e.code));
-      window.addEventListener("blur", () => pressed.clear());
-      document.addEventListener("focusin", (e) => {
-        if (isTyping(e)) pressed.clear();
-      });
+      }
 
-      const clock = new THREE.Clock();
-      function animate() {
-        const dt = Math.min(clock.getDelta(), 0.05);
-        for (const p of players) {
-          updateTerminalStatus(p);
-          let dx = 0,
-            dz = 0;
-          if (pressed.has(p.keys.up)) dz -= 1;
-          if (pressed.has(p.keys.down)) dz += 1;
-          if (pressed.has(p.keys.left)) dx -= 1;
-          if (pressed.has(p.keys.right)) dx += 1;
-          if (!dx && !dz) continue;
-          const step = (SPEED * dt) / Math.hypot(dx, dz);
-          const pos = p.mesh.position;
-          // Resolve each axis separately so balls slide along walls; rotate to look like rolling.
-          if (walkable(pos.x + dx * step, pos.z)) {
-            pos.x += dx * step;
-            p.mesh.rotation.z -= (dx * step) / BALL_R;
-          }
-          if (walkable(pos.x, pos.z + dz * step)) {
-            pos.z += dz * step;
-            p.mesh.rotation.x += (dz * step) / BALL_R;
-          }
-        }
+      const stoneLoader = new THREE.TextureLoader();
+      Promise.all([
+        stoneLoader.loadAsync("Stonewall.png"),
+        stoneLoader.loadAsync("Stonewalls2.jpg"),
+      ])
+        .then(([stonewall, stonewalls2]) => {
+          applyStoneTexture(stonewall, "floor");
+          applyStoneTexture(stonewalls2, "wall");
+        })
+        .catch((error) => {
+          console.error("Unable to load the Sound Shatter stone textures:", error);
+        });
+
+      function animate(time) {
+        const coneScale = 1 + 0.22 * Math.sin(time * 0.02);
+        speakerCone.scale.y = coneScale;
+        speakerCone.position.y = 0.29 + 0.1 * coneScale;
+        speakerCap.position.y = 0.29 + 0.2 * coneScale;
         renderer.render(scene, camera);
         requestAnimationFrame(animate);
       }
-      animate();
+      requestAnimationFrame(animate);
 
       window.addEventListener("resize", () => {
         camera.aspect = root.clientWidth / root.clientHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(root.clientWidth, root.clientHeight);
+        renderer.render(scene, camera);
       });
     </script>
   </body>

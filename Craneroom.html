@@ -346,8 +346,31 @@
         mat(0x9a9a9a, { roughness: 1 }), // stone
         mat(0x9fd8ee, { transparent: true, opacity: 0.6, roughness: 0.1 }), // glass
       ];
+      const materialNames = ["Wood", "Metal", "Stone", "Glass"];
       materials.forEach((material, i) => {
-        box(0.8, 0.8, 0.8, v(TABLE_X - 1.8 + i * 1.2, 1.5, TABLE_Z), material);
+        const x = TABLE_X - 1.8 + i * 1.2;
+        box(0.8, 0.8, 0.8, v(x, 1.5, TABLE_Z), material);
+
+        const labelCanvas = document.createElement("canvas");
+        labelCanvas.width = 256;
+        labelCanvas.height = 72;
+        const context = labelCanvas.getContext("2d");
+        context.fillStyle = "rgba(25, 30, 36, 0.9)";
+        context.fillRect(0, 0, labelCanvas.width, labelCanvas.height);
+        context.fillStyle = "#ffffff";
+        context.font = "bold 38px sans-serif";
+        context.textAlign = "center";
+        context.textBaseline = "middle";
+        context.fillText(materialNames[i], labelCanvas.width / 2, labelCanvas.height / 2);
+
+        const labelTexture = new THREE.CanvasTexture(labelCanvas);
+        labelTexture.colorSpace = THREE.SRGBColorSpace;
+        const label = new THREE.Mesh(
+          new THREE.PlaneGeometry(0.68, 0.19),
+          new THREE.MeshBasicMaterial({ map: labelTexture, transparent: true, depthWrite: false }),
+        );
+        label.position.set(x, 1.5, TABLE_Z + 0.411);
+        scene.add(label);
       });
 
       // Exit: a raised, open-topped enclosure on the right behind a breakable red wall.

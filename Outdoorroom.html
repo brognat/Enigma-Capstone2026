@@ -240,30 +240,92 @@
           return texture;
         }
 
-        function surface(baseTexture, depth, z, tileWidth, roughness) {
+        function surface(
+          baseTexture,
+          depth,
+          z,
+          tileWidth,
+          roughness,
+          geometry = new THREE.PlaneGeometry(ROOM_W, depth),
+        ) {
           const texture = tiledTexture(baseTexture, ROOM_W, depth, tileWidth);
           const tileDepth =
             (tileWidth * baseTexture.image.height) / baseTexture.image.width;
           texture.offset.y = (ROOM_D / 2 - z - depth / 2) / tileDepth;
 
           const mesh = new THREE.Mesh(
-            new THREE.PlaneGeometry(ROOM_W, depth),
+            geometry,
             new THREE.MeshStandardMaterial({ map: texture, roughness }),
           );
           mesh.rotation.x = -Math.PI / 2;
           mesh.position.set(0, 0, z);
           mesh.receiveShadow = true;
           scene.add(mesh);
-          return texture;
+          return mesh;
+        }
+
+        const waterTileWidth = 3;
+        const waterFlowSpeed = 0.15 * waterTileWidth;
+
+        function shadeWater(material, flow, phase) {
+          material.onBeforeCompile = (shader) => {
+            shader.uniforms.waterDistance = flow;
+            shader.uniforms.waterPhase = { value: phase };
+            shader.vertexShader = shader.vertexShader
+              .replace("#include <common>", "#include <common>\nvarying vec2 vWaterPosition;")
+              .replace("#include <begin_vertex>", `
+                #include <begin_vertex>
+                vWaterPosition = position.xy;
+              `);
+            shader.fragmentShader = shader.fragmentShader
+              .replace("#include <common>", `
+                #include <common>
+                varying vec2 vWaterPosition;
+                uniform float waterDistance;
+                uniform float waterPhase;
+              `)
+              .replace("#include <map_fragment>", `
+                vec2 flowPosition = vWaterPosition - vec2(waterDistance, 0.0);
+                vec2 distortion = vec2(
+                  sin(3.2 * flowPosition.x + 1.7 * flowPosition.y + waterPhase),
+                  sin(6.1 * (flowPosition.x - 0.45 * waterDistance)
+                    - 4.3 * flowPosition.y - waterPhase)
+                );
+                vec3 caustics = texture2D(map, vMapUv + 0.036 * distortion).rgb;
+                diffuseColor.rgb *= mix(vec3(0.012, 0.095, 0.115), caustics, 0.23);
+              `)
+              .replace("#include <opaque_fragment>", `
+                // A broad sky reflection makes the moving slopes visible from the game camera.
+                vec3 waterView = normalize(vViewPosition);
+                vec3 reflected = inverseTransformDirection(reflect(-waterView, normal), viewMatrix);
+                float facing = clamp(dot(waterView, normal), 0.0, 1.0);
+                float fresnel = 0.04 + 0.96 * pow(1.0 - facing, 5.0);
+                float skyGlint = pow(max(dot(reflected, normalize(vec3(-0.2, 0.65, -1.0))), 0.0), 24.0);
+                outgoingLight = mix(outgoingLight, vec3(0.30, 0.57, 0.73), fresnel);
+                outgoingLight += vec3(0.37, 0.51, 0.56) * skyGlint * (0.25 + 2.0 * fresnel);
+                #include <opaque_fragment>
+              `);
+          };
+        }
+
+        function stream(z, direction, phase) {
+          const geometry = new THREE.PlaneGeometry(ROOM_W, STREAM_D, 156, 12);
+          const positions = geometry.attributes.position;
+          positions.setUsage(THREE.DynamicDrawUsage);
+          geometry.attributes.normal.setUsage(THREE.DynamicDrawUsage);
+          const mesh = surface(
+            waterTexture, STREAM_D, z, waterTileWidth, 0.22, geometry,
+          );
+          const flow = { value: 0 };
+          shadeWater(mesh.material, flow, phase);
+          return { mesh, direction, phase, flow };
         }
 
         // Separate grass bands leave two actual gaps for the water, without overlapping surfaces.
-        const waterTextures = [];
         surface(grassTexture, 4, -6, 3, 0.95);
-        waterTextures.push(surface(waterTexture, STREAM_D, -3, 3, 0.35));
         surface(grassTexture, 4, 0, 3, 0.95);
-        waterTextures.push(surface(waterTexture, STREAM_D, 3, 3, 0.35));
         surface(grassTexture, 4, 6, 3, 0.95);
+        const streams = [stream(-3, 1, 0), stream(3, -1, 1.7)];
 
         const woodPixels = new Uint8Array(128 * 128 * 4);
         for (let y = 0; y < 128; y++) {
@@ -474,16 +536,32 @@
         handle.receiveShadow = true;
         scene.add(handle);
 
-
         const waterClock = new THREE.Clock();
-        const waterFlowSpeed = 0.15;
+        let waterTime = 0;
 
         function animateWater() {
-          const elapsed = Math.min(waterClock.getDelta(), 0.05);
-          for (const [index, texture] of waterTextures.entries()) {
-            const direction = index === 0 ? -1 : 1;
-            texture.offset.x =
-              (texture.offset.x + direction * waterFlowSpeed * elapsed) % 1;
+          waterTime += Math.min(waterClock.getDelta(), 0.05);
+          for (const { mesh, direction, phase, flow } of streams) {
+            const distance = direction * waterFlowSpeed * waterTime;
+            flow.value = distance;
+            mesh.material.map.offset.x = (-distance / waterTileWidth) % 1;
+
+            const { position, uv } = mesh.geometry.attributes;
+            for (let i = 0; i < position.count; i++) {
+              const x = position.getX(i);
+              const y = position.getY(i);
+              const across = uv.getY(i);
+              // Fade the displacement to zero with a flat slope at both banks.
+              const bankFade = 4 * across * (1 - across);
+              const swell = Math.sin(3.2 * (x - distance) + 1.7 * y + phase);
+              const ripple = Math.sin(6.1 * (x - 1.45 * distance) - 4.3 * y - phase);
+              position.setZ(
+                i,
+                bankFade * bankFade * (0.072 * swell + 0.024 * ripple),
+              );
+            }
+            position.needsUpdate = true;
+            mesh.geometry.computeVertexNormals();
           }
           renderer.render(scene, camera);
         }
