@@ -1,9 +1,6 @@
 const setupMenu = document.getElementById("setup-menu");
 const setupForm = document.getElementById("setup-form");
-const userIdInputs = [
-  document.getElementById("user-1-id"),
-  document.getElementById("user-2-id"),
-];
+const user2Input = document.getElementById("user-2-id");
 
 document.getElementById("start-button").addEventListener("click", () => {
   setupMenu.showModal();
@@ -20,23 +17,30 @@ setupMenu.addEventListener("keydown", (event) => {
   }
 });
 
-userIdInputs.forEach((input) => {
-  input.addEventListener("input", () => {
-    input.setCustomValidity(
-      input.value.trim() ? "" : "Please enter a user ID.",
-    );
-  });
-});
+function clearCustomValidity() {
+  user2Input.setCustomValidity("");
+}
+
+// Clear custom valididty to make sure the validity message doesnt carry on from last submit
+user2Input.addEventListener("input", clearCustomValidity);
 
 setupForm.addEventListener("submit", (event) => {
   event.preventDefault();
-  userIdInputs.forEach((input) => {
-    input.value = input.value.trim();
-    input.setCustomValidity(input.value ? "" : "Please enter a user ID.");
-  });
-  if (!setupForm.reportValidity()) return;
 
-  const aiMode = setupForm.elements.namedItem("aiMode").value;
-  sessionStorage.setItem("aiMode", aiMode);
+  const formData = new FormData(setupForm);
+  const user1Id = formData.get("user1Id").trim();
+  const user2Id = formData.get("user2Id").trim();
+  const aiMode = formData.get("aiMode");
+
+  if (user1Id === user2Id) {
+    user2Input.setCustomValidity("User 2 ID must be different from User 1 ID.");
+    user2Input.reportValidity();
+    return;
+  }
+
+  sessionStorage.setItem("user1Id", `"${user1Id}"`);
+  sessionStorage.setItem("user2Id", `"${user2Id}"`);
+  sessionStorage.setItem("aiMode", `"${aiMode}"`);
+
   window.location.assign("../pages/game.html");
 });
