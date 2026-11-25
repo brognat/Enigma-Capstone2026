@@ -1,0 +1,63 @@
+// Adapted from https://github.com/mrdoob/three.js/blob/master/examples/physics_rapier_basic.html
+
+import * as THREE from 'three';
+import { RapierPhysics } from 'three/addons/physics/RapierPhysics.js';
+
+class PhysicsEngine {
+
+    constructor(scene = null) {
+        if (scene && !scene.isScene) {
+            throw new TypeError("The scene parameter must be a THREE.Scene.");
+        }
+        this.scene = scene;
+        this.physics = null;
+        this.world = null;
+        this.RAPIER = null;
+    }
+
+    /**
+     * Initializes the physics enigine and adds the scene
+     */
+    async init() {
+        this.physics = await RapierPhysics();
+        this.world = this.physics.world;
+        this.RAPIER = this.physics.RAPIER;
+
+        // Add scene to the physics world
+        if (this.scene) {
+            this.physics.addScene(this.scene);
+        }
+    }
+
+    addScene(scene) {
+        if (!scene || !scene.isScene) {
+            throw new TypeError("The scene parameter must be a THREE.Scene.");
+        }
+        this.scene = scene;
+        if (this.physics) {
+            this.physics.addScene(this.scene);
+        }
+    }
+
+    /**
+    * Adds the given mesh to this physics simulation..
+    * 
+    * @param {THREE.Mesh} mesh - The mesh to add.
+    * @param {number} mass - The mass in kg of the mesh.
+    * @param {number} restitution - The restitution of the mesh, usually from 0 to 1. Represents how "bouncy" objects are when they collide with each other.
+    */
+    addMesh(mesh, mass, restitution) {
+        this.physics.addMesh(mesh, mass, restitution);
+    }
+
+    /**
+     * Removes the given mesh from this physics simulation.
+     * 
+     * @param {THREE.Mesh} mesh - The mesh to remove.
+     */
+    removeMesh(mesh) {
+        this.physics.removeMesh(mesh);
+    }
+}
+
+export default PhysicsEngine;
