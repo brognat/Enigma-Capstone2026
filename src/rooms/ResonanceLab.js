@@ -320,21 +320,9 @@ class ResonanceLab extends BaseRoom {
     }
 
     setUpPlayers() {
-        const geometry = new THREE.CapsuleGeometry(0.3, 1, 8, 8);
-        const material = new THREE.MeshStandardMaterial({ color: 0x0000ff });
-
-        const mesh1 = new THREE.Mesh(geometry, material);
-        mesh1.castShadow = true;
-        mesh1.position.set(0, 0.8, 0);
-        this.scene.add(mesh1);
-
-        const mesh2 = new THREE.Mesh(geometry, material);
-        mesh2.castShadow = true;
-        mesh2.position.set(1, 0.8, 0);
-        this.scene.add(mesh2);
-
-        this.setPlayer1(new Player(mesh1, "player1"));
-        this.setPlayer2(new Player(mesh2, "player2"));
+        // TODO need to set up player spawn for this room
+        // Note since its not inplemnted it thorws a bug in GameLoop
+        return;
     }
 
     enablePhysics(physicsEngine) {
