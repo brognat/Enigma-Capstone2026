@@ -22,7 +22,7 @@ page. They are not sent to a server. The existing click logger is unchanged and
 is also included on the game page.
 
 ## Team Members
-- [Wander Brito Martinez](https://github.com/britomartinw) | Team Lead, Backend Lead, Technical Lead 
+- [Wander Brito Martinez](https://github.com/britomartinw) | Team Lead, Backend Lead, Technical Lead
 - [Todd Brogna](https://github.com/brognat) | Database Engineer, AI Lead, Lead Communicator
 - [Erik Fudge](https://github.com/EFudge1218) | Full Stack Developer
 

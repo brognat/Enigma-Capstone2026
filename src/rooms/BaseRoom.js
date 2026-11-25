@@ -9,7 +9,7 @@ class BaseRoom {
         }
 
         // Fail if a subclass forgot to implement required methods
-        const requiredMethods = ['build', 'enablePhysics', 'animate'];
+        const requiredMethods = ['build', 'setUpPlayers', 'enablePhysics', 'animate'];
         for (const method of requiredMethods) {
             if (this[method] === BaseRoom.prototype[method]) {
                 throw new TypeError(`${new.target.name} must implement the ${method}() method.`);
@@ -139,10 +139,17 @@ class BaseRoom {
     // ===========================================
 
     /**
-     * Build the room's lights, geometry, props, and players (no physics yet).
+     * Build the room's lights, geometry, and props (no physics yet).
      */
     build() {
         throw new Error("Method 'build()' must be implemented.");
+    }
+
+    /**
+     * Build the players players.
+     */
+    setUpPlayers() {
+        throw new Error("Method 'setUpPlayers()' must be implemented.");
     }
 
     /**

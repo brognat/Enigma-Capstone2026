@@ -7,7 +7,6 @@ export default defineConfig({
       input: {
         main: resolve(import.meta.dirname, "index.html"),
         complete: resolve(import.meta.dirname, "pages/complete.html"),
-        game: resolve(import.meta.dirname, "pages/game.html")
         // add each page in pages/ here
       },
     },
