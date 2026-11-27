@@ -12,7 +12,7 @@
 	height: 100dvh;
 	min-height: 0;
 	margin: 0;
-	border: 1px solid #555;
+	border: 1px solid var(--color-surface-strong);
 	padding: 0;
 	overflow: hidden;
 }
@@ -38,19 +38,12 @@
 
 .room-toolbar h1 {
 	color: var(--color-text);
-	font: 700 1.25rem var(--font-body);
+	font: 700 1.25rem var(--font-display);
 }
 
-.room-toolbar a {
-	color: #ddd;
-}
-
-.room-toolbar .button,
 .room-direction-pad button {
-	border: 1px solid #888;
-	border-radius: 0;
-	color: #ddd;
-	background: #3c3c3c;
+	color: var(--color-text);
+	background: var(--color-surface-strong);
 	box-shadow: none;
 }
 
@@ -68,7 +61,7 @@
 #room-scene:focus-visible,
 .room-direction-pad button:focus-visible,
 .room-toolbar :focus-visible {
-	outline: 2px solid #eee;
+	outline: 2px solid var(--color-accent-strong);
 	outline-offset: 3px;
 }
 
@@ -83,10 +76,10 @@
 	gap: 16px;
 	width: max-content;
 	max-width: calc(100vw - 24px);
-	border: 1px solid rgba(255, 255, 255, 0.16);
+	border: 1px solid rgba(240, 179, 94, 0.42);
 	border-radius: 8px;
 	padding: 8px 12px;
-	background: rgba(18, 18, 18, 0.88);
+	background: var(--color-surface);
 	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
 	text-align: left;
 	transform: translateX(-50%);
@@ -100,7 +93,7 @@
 }
 
 .room-control-set--second {
-	border-left: 1px solid rgba(255, 255, 255, 0.2);
+	border-left: 1px solid rgba(244, 234, 215, 0.14);
 	padding-left: 16px;
 }
 
@@ -119,14 +112,14 @@
 .room-control-set strong {
 	display: block;
 	margin-bottom: 3px;
-	color: #eee;
+	color: var(--color-text);
 }
 
 .room-footer kbd {
-	border: 1px solid #777;
+	border: 1px solid var(--color-muted);
 	border-radius: 3px;
 	padding: 2px 5px;
-	color: #eee;
+	color: var(--color-text);
 	font: inherit;
 }
 
@@ -156,7 +149,7 @@
 }
 
 .room-direction-pad button:active {
-	background: #666;
+	background: var(--color-accent);
 }
 
 .arrow-key-pad {
@@ -170,7 +163,7 @@
 	min-height: 24px;
 	place-items: center;
 	padding: 0;
-	background: #3c3c3c;
+	background: var(--color-surface-strong);
 	font-size: 0.9rem;
 }
 
@@ -221,7 +214,7 @@
 	}
 
 	.room-control-set--second {
-		border-top: 1px solid rgba(255, 255, 255, 0.2);
+		border-top: 1px solid rgba(244, 234, 215, 0.14);
 		border-left: 0;
 		padding-top: 6px;
 		padding-left: 0;

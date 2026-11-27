@@ -1,11 +1,11 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sound Shatter - The Enigma Escape Room</title>
-    <link rel="stylesheet" href="Style.css" />
-    <link rel="stylesheet" href="Game.css" />
+    <link rel="stylesheet" href="../css/Style.css" />
+    <link rel="stylesheet" href="../css/Game.css" />
     <style>
       #game-root canvas {
         position: absolute;
@@ -13,21 +13,14 @@
         display: block;
       }
     </style>
-    <script type="importmap">
-      {
-        "imports": {
-          "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
-        }
-      }
-    </script>
   </head>
   <body class="game-page">
     <main id="game-root" aria-label="Sound Shatter">
       <header class="room-toolbar">
         <h1>Sound Shatter</h1>
         <nav aria-label="Game controls">
-          <a href="Index.html">Exit</a>
-          <a class="finish-room button" href="Complete.html">Finish room</a>
+          <a href="../../index.html">Exit</a>
+          <a class="finish-room button" href="../../pages/complete.html">Finish room</a>
         </nav>
       </header>
     </main>
@@ -168,7 +161,7 @@
         Preview only. Messages are not sent.
       </p>
     </section>
-    <script src="Assistant.js"></script>
+    <script type="module" src="../website/Assistant.js"></script>
     <script type="module">
       import * as THREE from "three";
 
@@ -471,10 +464,13 @@
         }
       }
 
+      const textureUrl = (fileName) => {
+        return new URL(`/textures/${fileName}`, window.location.origin).href;
+      };
       const stoneLoader = new THREE.TextureLoader();
       Promise.all([
-        stoneLoader.loadAsync("Stonewall.png"),
-        stoneLoader.loadAsync("Stonewalls2.jpg"),
+        stoneLoader.loadAsync(textureUrl("Stonewall.png")),
+        stoneLoader.loadAsync(textureUrl("Stonewalls2.jpg")),
       ])
         .then(([stonewall, stonewalls2]) => {
           applyStoneTexture(stonewall, "floor");

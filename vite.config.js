@@ -7,7 +7,23 @@ export default defineConfig({
       input: {
         main: resolve(import.meta.dirname, "index.html"),
         complete: resolve(import.meta.dirname, "pages/complete.html"),
-        // add each page in pages/ here
+        climateChamber: resolve(
+          import.meta.dirname,
+          "src/rooms/ClimateChamber.html",
+        ),
+        maze: resolve(import.meta.dirname, "src/rooms/Maze.html"),
+        riverCrossing: resolve(
+          import.meta.dirname,
+          "src/rooms/RiverCrossing.html",
+        ),
+        demolitionLab: resolve(
+          import.meta.dirname,
+          "src/rooms/DemolitionLab.html",
+        ),
+        resonanceLab: resolve(
+          import.meta.dirname,
+          "src/rooms/ResonanceLab.html",
+        ),
       },
     },
   },

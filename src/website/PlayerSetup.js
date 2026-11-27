@@ -40,7 +40,7 @@ setupForm.addEventListener("submit", (event) => {
 
   sessionStorage.setItem("user1Id", `"${user1Id}"`);
   sessionStorage.setItem("user2Id", `"${user2Id}"`);
-  sessionStorage.setItem("aiMode", `"${aiMode}"`);
+  sessionStorage.setItem("aiMode", aiMode);
 
-  window.location.assign("../pages/game.html");
+  window.location.assign("./src/rooms/Maze.html");
 });
